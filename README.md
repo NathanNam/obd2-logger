@@ -102,6 +102,10 @@ Profiles are JSON documents that describe a vehicle family's PID landscape. Thre
 
 You can import any third-party profile JSON via **Settings → Profiles**, and export any installed profile back to JSON to share. Authoring new profiles is a manual JSON-edit task (no in-app editor in v1) — the schema is documented in `src/profiles/types.ts`.
 
+### Got a different car?
+
+Community-contributed profiles for other vehicles (Honda hybrids, Ford EcoBoost, BMW, Tesla, etc.) live in [`community-profiles/`](./community-profiles). Browse the list there, download a `.json`, and import it into the app. To contribute a profile for your own vehicle, see [`community-profiles/CONTRIBUTING.md`](./community-profiles/CONTRIBUTING.md) — the workflow involves a PID sweep, byte-slice analysis with `scripts/identify-mg-bytes.py`, and a `validated_against` block documenting what you actually tested.
+
 ## Sharing your data
 
 **Settings → Export your data** zips up `data/<owner>/` (or a single vehicle) into a single download. Send the zip to a friend; they unzip it directly into their `data/` and your owner directory appears next to theirs. The app ignores other owners' folders — it only ever writes to its own.
