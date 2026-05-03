@@ -89,6 +89,11 @@ final class BLEManager: NSObject {
     /// Tracks which characteristics still need their characteristics discovered
     /// before we can pick.
     private var pendingServiceDiscovery: Int = 0
+    /// Continuation woken when the rx characteristic's notification state is
+    /// confirmed to be enabled. Without waiting for this, writes to tx may
+    /// arrive at the adapter before the GATT subscription is actually live,
+    /// and the response notifications get dropped.
+    private var notifyContinuation: CheckedContinuation<Void, Error>?
 
     static let shared = BLEManager()
 
@@ -320,15 +325,31 @@ extension BLEManager: CBPeripheralDelegate {
 
             if let pickResult = self.pickTxRx(from: services) {
                 self.picked = (pickResult.service, pickResult.tx, pickResult.rx)
-                peripheral.setNotifyValue(true, for: pickResult.rx)
                 let description = PickedDescription(
                     serviceUUID: pickResult.service.uuid.uuidString,
                     txUUID: pickResult.tx.uuid.uuidString,
                     rxUUID: pickResult.rx.uuid.uuidString,
                     source: pickResult.source
                 )
-                self.discoverContinuation?.resume(returning: description)
-                self.discoverContinuation = nil
+                // Subscribe and wait for the subscription to be confirmed by
+                // peripheral(_:didUpdateNotificationStateFor:error:) before
+                // resolving the discover continuation. Without this, a
+                // subsequent write to tx can race ahead of the actual
+                // notification subscription on the adapter side, and the
+                // response gets dropped.
+                Task { @MainActor in
+                    do {
+                        try await self.subscribeAndConfirm(
+                            peripheral: peripheral,
+                            characteristic: pickResult.rx
+                        )
+                        self.discoverContinuation?.resume(returning: description)
+                        self.discoverContinuation = nil
+                    } catch {
+                        self.discoverContinuation?.resume(throwing: error)
+                        self.discoverContinuation = nil
+                    }
+                }
             } else {
                 self.discoverContinuation?.resume(throwing: BLEError.noUsableService)
                 self.discoverContinuation = nil
@@ -345,6 +366,39 @@ extension BLEManager: CBPeripheralDelegate {
         // Forward bytes to the inbound stream regardless of which characteristic
         // they came from — only one rx is subscribed at a time.
         inboundContinuation.yield(value)
+    }
+
+    nonisolated func peripheral(
+        _ peripheral: CBPeripheral,
+        didUpdateNotificationStateFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        Task { @MainActor in
+            if let error = error {
+                self.notifyContinuation?.resume(
+                    throwing: BLEError.serviceDiscoveryFailed(
+                        "subscription failed: \(error.localizedDescription)"
+                    )
+                )
+            } else {
+                self.notifyContinuation?.resume()
+            }
+            self.notifyContinuation = nil
+        }
+    }
+}
+
+// MARK: - Notification subscription helper
+
+private extension BLEManager {
+    func subscribeAndConfirm(
+        peripheral: CBPeripheral,
+        characteristic: CBCharacteristic
+    ) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.notifyContinuation = continuation
+            peripheral.setNotifyValue(true, for: characteristic)
+        }
     }
 }
 

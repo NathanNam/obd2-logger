@@ -42,9 +42,12 @@ final class ELM327 {
         self.ble = BLEManager.shared
     }
 
-    /// Begin consuming inbound data, framing on the `>` prompt.
+    /// Begin consuming inbound data, framing on the `>` prompt. Resets the
+    /// adapter log so retries don't leave stale entries from previous attempts.
     func attach() {
         inboundTask?.cancel()
+        log.removeAll()
+        lineBuffer = ""
         let stream = ble.inboundStream
         inboundTask = Task { [weak self] in
             for await data in stream {
@@ -108,7 +111,9 @@ final class ELM327 {
     func initSequence() async throws -> String {
         recordLog(.info, "Init sequence starting…")
         // ATZ: warm reset; banner contains "ELM327 v..."
-        let banner = try await send("ATZ", timeout: 3.0)
+        // 6s timeout — some clones take a couple seconds to cold-boot the
+        // chip after a fresh BLE connection.
+        let banner = try await send("ATZ", timeout: 6.0)
         // Adapter sometimes echoes `ATZ` before the banner; just take everything.
         try await expectOK("ATE0") // turn off echo
         try await expectOK("ATL0") // line feeds off
