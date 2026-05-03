@@ -126,7 +126,11 @@ final class BLEManager: NSObject {
     /// Begin scanning for nearby BLE peripherals advertising any of the
     /// `KnownServices.serviceUUIDs`. Updates `discovered` as devices are seen.
     func startScan() {
-        guard central.state == .poweredOn else { return }
+        guard central.state == .poweredOn else {
+            NSLog("[OBD2-BLE] startScan: skipped, central not poweredOn")
+            return
+        }
+        NSLog("[OBD2-BLE] startScan: filtering for \(KnownServices.serviceUUIDs.map { $0.uuidString })")
         discovered.removeAll()
         connectionState = .scanning
         central.scanForPeripherals(
@@ -198,6 +202,12 @@ final class BLEManager: NSObject {
         let preferNoResponse = picked.tx.properties.contains(.writeWithoutResponse)
         let writeType: CBCharacteristicWriteType =
             preferNoResponse ? .withoutResponse : .withResponse
+        let typeString = writeType == .withoutResponse ? "withoutResponse" : "withResponse"
+        let hex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
+        let asciiPreview = String(data: data, encoding: .ascii)?
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\n", with: "\\n") ?? "?"
+        NSLog("[OBD2-BLE] send: type=\(typeString) bytes=\(data.count) ascii=\"\(asciiPreview)\" hex=[\(hex)]")
 
         var index = 0
         while index < data.count {
@@ -205,7 +215,7 @@ final class BLEManager: NSObject {
             let chunk = data.subdata(in: index..<end)
 
             if writeType == .withoutResponse, !peripheral.canSendWriteWithoutResponse {
-                // Queue full — wait for CoreBluetooth to signal readiness.
+                NSLog("[OBD2-BLE] send: queue full, awaiting peripheralIsReady")
                 await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
                     self.canWriteContinuations.append(continuation)
                 }
@@ -239,6 +249,7 @@ extension BLEManager: CBCentralManagerDelegate {
         case .resetting, .unknown: .unknown
         @unknown default: .unknown
         }
+        NSLog("[OBD2-BLE] centralManagerDidUpdateState → \(next)")
         Task { @MainActor in
             self.powerState = next
             if next != .unknown {
@@ -269,6 +280,7 @@ extension BLEManager: CBCentralManagerDelegate {
     }
 
     nonisolated func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        NSLog("[OBD2-BLE] didConnect: \(peripheral.identifier.uuidString) name=\(peripheral.name ?? "?")")
         Task { @MainActor in
             self.connectContinuation?.resume()
             self.connectContinuation = nil
@@ -281,6 +293,7 @@ extension BLEManager: CBCentralManagerDelegate {
         error: Error?
     ) {
         let message = error?.localizedDescription ?? "Connection failed."
+        NSLog("[OBD2-BLE] didFailToConnect: \(message)")
         Task { @MainActor in
             self.connectContinuation?.resume(throwing: BLEError.connectFailed(message))
             self.connectContinuation = nil
@@ -293,6 +306,7 @@ extension BLEManager: CBCentralManagerDelegate {
         didDisconnectPeripheral peripheral: CBPeripheral,
         error: Error?
     ) {
+        NSLog("[OBD2-BLE] didDisconnectPeripheral error=\(error?.localizedDescription ?? "nil")")
         Task { @MainActor in
             self.peripheral = nil
             self.picked = nil
@@ -309,6 +323,8 @@ extension BLEManager: CBCentralManagerDelegate {
 
 extension BLEManager: CBPeripheralDelegate {
     nonisolated func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
+        let services = peripheral.services ?? []
+        NSLog("[OBD2-BLE] didDiscoverServices: count=\(services.count) uuids=\(services.map { $0.uuid.uuidString }) error=\(error?.localizedDescription ?? "nil")")
         if let error {
             Task { @MainActor in
                 self.discoverContinuation?.resume(throwing: BLEError.serviceDiscoveryFailed(error.localizedDescription))
@@ -316,8 +332,6 @@ extension BLEManager: CBPeripheralDelegate {
             }
             return
         }
-        // For each advertised service, request its characteristics.
-        let services = peripheral.services ?? []
         Task { @MainActor in
             self.pendingServiceDiscovery = services.count
         }
@@ -331,6 +345,17 @@ extension BLEManager: CBPeripheralDelegate {
         didDiscoverCharacteristicsFor service: CBService,
         error: Error?
     ) {
+        let chars = service.characteristics ?? []
+        let charDescriptions = chars.map { c -> String in
+            var props: [String] = []
+            if c.properties.contains(.read) { props.append("read") }
+            if c.properties.contains(.write) { props.append("write") }
+            if c.properties.contains(.writeWithoutResponse) { props.append("writeNoResp") }
+            if c.properties.contains(.notify) { props.append("notify") }
+            if c.properties.contains(.indicate) { props.append("indicate") }
+            return "\(c.uuid.uuidString)[\(props.joined(separator: ","))]"
+        }
+        NSLog("[OBD2-BLE] didDiscoverCharacteristicsFor service=\(service.uuid.uuidString) chars=\(charDescriptions) error=\(error?.localizedDescription ?? "nil")")
         Task { @MainActor in
             self.pendingServiceDiscovery -= 1
             if self.pendingServiceDiscovery > 0 { return }
@@ -351,6 +376,7 @@ extension BLEManager: CBPeripheralDelegate {
                     rxUUID: pickResult.rx.uuid.uuidString,
                     source: pickResult.source
                 )
+                NSLog("[OBD2-BLE] picked service=\(description.serviceUUID) tx=\(description.txUUID) rx=\(description.rxUUID) source=\(pickResult.source.rawValue)")
                 // Subscribe and wait for the subscription to be confirmed by
                 // peripheral(_:didUpdateNotificationStateFor:error:) before
                 // resolving the discover continuation. Without this, a
@@ -382,7 +408,10 @@ extension BLEManager: CBPeripheralDelegate {
         didUpdateValueFor characteristic: CBCharacteristic,
         error: Error?
     ) {
-        guard let value = characteristic.value else { return }
+        let value = characteristic.value
+        let hex = value?.map { String(format: "%02X", $0) }.joined(separator: " ") ?? "nil"
+        NSLog("[OBD2-BLE] didUpdateValueFor char=\(characteristic.uuid.uuidString) bytes=\(value?.count ?? 0) hex=[\(hex)] error=\(error?.localizedDescription ?? "nil")")
+        guard let value else { return }
         // Forward bytes to the inbound stream regardless of which characteristic
         // they came from — only one rx is subscribed at a time.
         inboundContinuation.yield(value)
@@ -393,6 +422,7 @@ extension BLEManager: CBPeripheralDelegate {
         didUpdateNotificationStateFor characteristic: CBCharacteristic,
         error: Error?
     ) {
+        NSLog("[OBD2-BLE] didUpdateNotificationStateFor char=\(characteristic.uuid.uuidString) isNotifying=\(characteristic.isNotifying) error=\(error?.localizedDescription ?? "nil")")
         Task { @MainActor in
             if let error = error {
                 self.notifyContinuation?.resume(
@@ -407,7 +437,18 @@ extension BLEManager: CBPeripheralDelegate {
         }
     }
 
+    nonisolated func peripheral(
+        _ peripheral: CBPeripheral,
+        didWriteValueFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        // Only fires for `.withResponse` writes. Useful to know if peer is
+        // actually ack'ing.
+        NSLog("[OBD2-BLE] didWriteValueFor char=\(characteristic.uuid.uuidString) error=\(error?.localizedDescription ?? "nil")")
+    }
+
     nonisolated func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        NSLog("[OBD2-BLE] peripheralIsReady (toSendWriteWithoutResponse)")
         Task { @MainActor in
             let pending = self.canWriteContinuations
             self.canWriteContinuations.removeAll()
