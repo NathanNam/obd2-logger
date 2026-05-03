@@ -94,6 +94,10 @@ final class BLEManager: NSObject {
     /// arrive at the adapter before the GATT subscription is actually live,
     /// and the response notifications get dropped.
     private var notifyContinuation: CheckedContinuation<Void, Error>?
+    /// Continuations waiting for the BLE radio's send-without-response
+    /// queue to drain. Resumed when CoreBluetooth fires
+    /// `peripheralIsReady(toSendWriteWithoutResponse:)`.
+    private var canWriteContinuations: [CheckedContinuation<Void, Never>] = []
 
     static let shared = BLEManager()
 
@@ -177,29 +181,38 @@ final class BLEManager: NSObject {
     /// Write bytes to the tx characteristic, chunked to 20 bytes (typical
     /// MTU floor for un-negotiated BLE links).
     ///
-    /// Prefers `.withResponse` if the characteristic supports `.write` even
-    /// when `.writeWithoutResponse` is also supported. The unACKed path is
-    /// faster but lets writes silently drop if the BLE radio queue fills,
-    /// which broke ELM327 init on a Veepeak after the first two commands.
-    /// The web app's `await tx.writeValueWithResponse(...)` works the same
-    /// way; this just makes the iOS side match.
+    /// Prefers `.writeWithoutResponse` when the characteristic supports it.
+    /// Some ELM327 BLE clones (notably various Veepeak units) advertise
+    /// `.write` capability but only actually process writes received via
+    /// `.writeWithoutResponse` — switching the default to `.withResponse`
+    /// silently broke ATZ handshakes on those adapters.
+    ///
+    /// To avoid the queue-overflow problem the unACKed path can have under
+    /// fast back-to-back writes, we gate each write on
+    /// `canSendWriteWithoutResponse`. If the BLE radio's queue is full,
+    /// we await `peripheralIsReady(toSendWriteWithoutResponse:)` before
+    /// the next write.
     func send(_ data: Data) async throws {
         guard let peripheral, let picked else { throw BLEError.notConnected }
         let chunkSize = 20
-        let supportsWithResponse = picked.tx.properties.contains(.write)
+        let preferNoResponse = picked.tx.properties.contains(.writeWithoutResponse)
         let writeType: CBCharacteristicWriteType =
-            supportsWithResponse ? .withResponse : .withoutResponse
+            preferNoResponse ? .withoutResponse : .withResponse
 
         var index = 0
         while index < data.count {
             let end = min(index + chunkSize, data.count)
             let chunk = data.subdata(in: index..<end)
+
+            if writeType == .withoutResponse, !peripheral.canSendWriteWithoutResponse {
+                // Queue full — wait for CoreBluetooth to signal readiness.
+                await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                    self.canWriteContinuations.append(continuation)
+                }
+            }
+
             peripheral.writeValue(chunk, for: picked.tx, type: writeType)
             index = end
-            if writeType == .withoutResponse {
-                // No ack — give the radio a brief moment to drain.
-                try await Task.sleep(nanoseconds: 5_000_000) // 5ms
-            }
         }
     }
 
@@ -391,6 +404,14 @@ extension BLEManager: CBPeripheralDelegate {
                 self.notifyContinuation?.resume()
             }
             self.notifyContinuation = nil
+        }
+    }
+
+    nonisolated func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        Task { @MainActor in
+            let pending = self.canWriteContinuations
+            self.canWriteContinuations.removeAll()
+            for c in pending { c.resume() }
         }
     }
 }
