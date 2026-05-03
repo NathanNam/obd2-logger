@@ -1,6 +1,6 @@
-import { BleTransport } from "./ble-transport";
 import { discoverStandardPids } from "./discover";
 import { Elm327, type LogEntry } from "./elm327";
+import { pickBleTransport } from "./pick-transport";
 import type { Transport } from "./transport";
 import { readVin } from "./vin";
 
@@ -71,7 +71,7 @@ export class Connection {
     let transport: Transport;
     try {
       this.setState({ kind: "connecting", label: "…" });
-      transport = await BleTransport.pick();
+      transport = await pickBleTransport();
       this.setState({ kind: "connecting", label: transport.label });
       await transport.open();
     } catch (e) {
@@ -95,14 +95,12 @@ export class Connection {
       if (e.kind === "close") this.handleUnexpectedClose();
     });
 
-    if (transport instanceof BleTransport) {
-      const picked = transport.describePicked();
-      if (picked) {
-        elm.log(
-          "info",
-          `GATT picked (${picked.source}): service=${shortUuid(picked.service)} tx=${shortUuid(picked.tx)} rx=${shortUuid(picked.rx)}`,
-        );
-      }
+    const picked = transport.describePicked?.();
+    if (picked) {
+      elm.log(
+        "info",
+        `GATT picked (${picked.source}): service=${shortUuid(picked.service)} tx=${shortUuid(picked.tx)} rx=${shortUuid(picked.rx)}`,
+      );
     }
 
     try {
