@@ -49,21 +49,55 @@ final class LoggingSession {
         self.rawMode = rawMode
 
         do {
-            // 1. Probe (or trust cache).
-            var supported = vehicle.supportedProfilePIDs
+            // 0. Liveness probe: ask the ECU one cheap Mode-01 query. If it
+            //    times out or returns NO_DATA, the vehicle isn't in READY
+            //    mode (Toyota/Lexus hybrids stay asleep until foot-on-brake
+            //    push-start), so abort with a clear error before we burn
+            //    time on full discovery + probe (each of which takes ~15s
+            //    of timeouts when the ECU is silent).
+            state = .preparing(step: "Checking vehicle…")
+            if try await !ECULiveness.check(elm: elm) {
+                throw LoggingSessionError.ecuNotResponding
+            }
+
+            // 1a. Discover standard Mode-01 PIDs via the supported-PIDs bitmap
+            //     sweep. Trust the vehicle cache if present (skip in raw mode).
+            var supportedStandard = vehicle.supportedStandardPIDs
+            if rawMode {
+                // In raw mode we still want a useful set; fall back to discovery
+                // if the cache is empty so we have something to log.
+                if supportedStandard.isEmpty {
+                    state = .preparing(step: "Discovering standard PIDs…")
+                    supportedStandard = (try? await StandardPIDDiscovery.discover(elm: elm)) ?? []
+                }
+            } else if supportedStandard.isEmpty {
+                state = .preparing(step: "Discovering standard PIDs…")
+                supportedStandard = (try? await StandardPIDDiscovery.discover(elm: elm)) ?? []
+            }
+
+            // 1b. Probe profile PIDs (or trust cache).
+            var supportedProfile = vehicle.supportedProfilePIDs
             if rawMode {
                 state = .preparing(step: "Raw mode — querying every profile PID.")
-                supported = profile.pids.map { $0.id }
-            } else if supported.isEmpty {
+                supportedProfile = profile.pids.map { $0.id }
+            } else if supportedProfile.isEmpty {
                 state = .preparing(step: "Probing profile PIDs…")
-                supported = try await ProfileProbe.probe(elm: elm, profile: profile)
+                supportedProfile = try await ProfileProbe.probe(elm: elm, profile: profile)
             }
-            enabledPIDs = profile.pids.filter { supported.contains($0.id) }
 
-            // 2. Persist updated supported set on the vehicle (skip in raw mode).
+            // 1c. Build the combined registry (standard + profile PIDs).
+            enabledPIDs = RegistryBuilder.build(
+                profile: profile,
+                supportedStandardPIDs: supportedStandard,
+                supportedProfilePIDs: supportedProfile,
+                disabledPIDs: vehicle.disabledPIDs
+            )
+
+            // 2. Persist updated supported sets on the vehicle (skip in raw mode).
             if !rawMode {
                 var updated = vehicle
-                updated.supportedProfilePIDs = supported
+                updated.supportedStandardPIDs = supportedStandard
+                updated.supportedProfilePIDs = supportedProfile
                 updated.profileVersion = profile.profileVersion
                 updated.lastUsedUTC = ISO8601DateFormatter.utcMs.string(from: Date())
                 try VehicleStore.shared.save(updated)
@@ -95,6 +129,7 @@ final class LoggingSession {
             let sampler = Sampler(
                 elm: elm,
                 pids: enabledPIDs,
+                ecus: profile.ecus,
                 sampleRateHz: sampleRateHz,
                 sessionStartMs: sessionStartMs
             )
@@ -118,10 +153,12 @@ final class LoggingSession {
             sampler.start()
             self.sampler = sampler
 
-            // Keep the app running while in background by activating a
-            // silent audio session. See SilentAudioSession.swift for the
-            // App Store review implications.
-            SilentAudioSession.shared.start()
+            // Keep the app running in background by holding an active
+            // location session — Apple's sanctioned keep-alive for trip
+            // tracking apps. We don't store the location data; it's just
+            // what the OS requires to keep the BLE polling loop alive.
+            // See LocationKeepAlive.swift.
+            LocationKeepAlive.shared.start()
 
             state = .logging(rowCount: 0, sessionID: sessionID)
         } catch {
@@ -141,7 +178,7 @@ final class LoggingSession {
 
     private func cleanup(reason: String) async {
         sampler?.stop()
-        SilentAudioSession.shared.stop()
+        LocationKeepAlive.shared.stop()
         let writerSnapshot = writer
         try? writerSnapshot?.close()
 

@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct VehicleManagerView: View {
+    let elm: ELM327
     var settings = SettingsStore.shared
     var vehicleStore = VehicleStore.shared
     var profileRegistry = ProfileRegistry.shared
@@ -32,29 +33,39 @@ struct VehicleManagerView: View {
                     .padding(.vertical, 8)
             } else {
                 ForEach(vehicleStore.vehicles) { vehicle in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(vehicle.displayName)
-                                .font(.callout.weight(.semibold))
-                            Text(vehicle.slug + " · " + vehicle.profileId)
-                                .font(.caption.monospaced())
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        if settings.activeVehicleSlug == vehicle.slug {
-                            Text("ACTIVE")
-                                .font(.caption2.monospaced())
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(Color.green.opacity(0.2))
-                                .foregroundStyle(.green)
-                                .clipShape(RoundedRectangle(cornerRadius: 4))
-                        } else {
-                            Button("Activate") {
-                                settings.activeVehicleSlug = vehicle.slug
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(vehicle.displayName)
+                                    .font(.callout.weight(.semibold))
+                                Text(vehicle.slug + " · " + vehicle.profileId)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.tertiary)
+                                Text("\(vehicle.supportedStandardPIDs.count) std · \(vehicle.supportedProfilePIDs.count) profile PIDs cached")
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.tertiary)
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
+                            Spacer()
+                            if settings.activeVehicleSlug == vehicle.slug {
+                                Text("ACTIVE")
+                                    .font(.caption2.monospaced())
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Color.green.opacity(0.2))
+                                    .foregroundStyle(.green)
+                                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                            } else {
+                                Button("Activate") {
+                                    settings.activeVehicleSlug = vehicle.slug
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
                         }
+                        Button("Re-probe PIDs") {
+                            reprobePIDs(for: vehicle)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     }
                     .padding(10)
                     .background(Color(red: 28 / 255, green: 31 / 255, blue: 38 / 255))
@@ -63,7 +74,7 @@ struct VehicleManagerView: View {
             }
         }
         .sheet(isPresented: $showAdd) {
-            AddVehicleView()
+            AddVehicleView(elm: elm)
                 .onDisappear {
                     vehicleStore.reload(owner: settings.owner)
                 }
@@ -89,6 +100,19 @@ struct VehicleManagerView: View {
         }
         .onAppear {
             vehicleStore.reload(owner: settings.owner)
+        }
+    }
+
+    private func reprobePIDs(for vehicle: Vehicle) {
+        // Clear the cached supported lists so the next session re-runs
+        // the (now ATSH-aware) standard discovery + profile probe from
+        // scratch. Useful when an early session populated the cache via
+        // the old broadcast-addressed probe and produced false positives.
+        do {
+            try vehicleStore.clearPIDCaches(slug: vehicle.slug, owner: vehicle.owner)
+            importMessage = "Cleared PID cache for \(vehicle.displayName). Next logging session will re-discover."
+        } catch {
+            importMessage = "Re-probe failed: \(error.localizedDescription)"
         }
     }
 }

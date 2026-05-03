@@ -8,25 +8,38 @@ enum ProfileProbe {
     @MainActor
     static func probe(elm: ELM327, profile: Profile) async throws -> [String] {
         var supported: [String] = []
-        for pidDef in profile.pids {
-            let request = pidDef.mode + pidDef.pid
-            let positiveResponseCode = try positiveResponseCode(mode: pidDef.mode, pid: pidDef.pid)
-            do {
-                let response = try await elm.send(request, timeout: 1.5)
-                let normalized = response
-                    .uppercased()
-                    .replacingOccurrences(of: " ", with: "")
-                    .replacingOccurrences(of: "\n", with: "")
-                    .replacingOccurrences(of: "\r", with: "")
-                if normalized.contains("NODATA") || normalized.contains("STOPPED") {
+        // Group PIDs by ECU and set ATSH<request_header> once per group.
+        // Mode 21 PIDs on non-engine ECUs (hybrid_controller, etc.) only
+        // respond when explicitly addressed; the broadcast functional
+        // address misses them and they get falsely marked unsupported.
+        var grouped: [String: [PidDef]] = [:]
+        for pid in profile.pids {
+            grouped[pid.ecu, default: []].append(pid)
+        }
+        for ecuName in grouped.keys.sorted() {
+            if let ecu = profile.ecus[ecuName] {
+                _ = try? await elm.send("ATSH\(ecu.requestHeader)", timeout: 0.8)
+            }
+            for pidDef in grouped[ecuName] ?? [] {
+                let request = pidDef.mode + pidDef.pid
+                let positiveResponseCode = try positiveResponseCode(mode: pidDef.mode, pid: pidDef.pid)
+                do {
+                    let response = try await elm.send(request, timeout: 1.5)
+                    let normalized = response
+                        .uppercased()
+                        .replacingOccurrences(of: " ", with: "")
+                        .replacingOccurrences(of: "\n", with: "")
+                        .replacingOccurrences(of: "\r", with: "")
+                    if normalized.contains("NODATA") || normalized.contains("STOPPED") {
+                        continue
+                    }
+                    if normalized.contains(positiveResponseCode) {
+                        supported.append(pidDef.id)
+                    }
+                } catch {
+                    // Timeout or transport error → skip this PID and keep going.
                     continue
                 }
-                if normalized.contains(positiveResponseCode) {
-                    supported.append(pidDef.id)
-                }
-            } catch {
-                // Timeout or transport error → skip this PID and keep going.
-                continue
             }
         }
         return supported

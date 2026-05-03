@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		08E5F5AFF32188DE35000EBA /* AddVehicleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33D1CE8428B1971BC15E8039 /* AddVehicleView.swift */; };
 		0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E1FEEF3F1957049703A731 /* Vehicle.swift */; };
+		100ECA5F27FBA097AA0B3FC6 /* StandardPids.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDDFD70B112D737500F7D9C /* StandardPids.swift */; };
 		1B1CF3D1EEFC5FE6AD585D35 /* StandardPIDDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CD6FAAC0FF8E87514746E /* StandardPIDDiscovery.swift */; };
 		1B9395F68B8969D469264288 /* DevicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBBFB7ED4462071E11A2FE3F /* DevicePickerView.swift */; };
 		1D82AD8BD2858E4E8341AFC8 /* ConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C3E051283D8AAFE92D8A5A /* ConnectionView.swift */; };
+		1DA20A85EADFDC979ADAB62E /* LocationKeepAlive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EABACB115B324F4965CE172 /* LocationKeepAlive.swift */; };
 		2A309B266EDD3C6B905BAD0B /* SessionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B942AACBC4E12924F1201AC0 /* SessionsListView.swift */; };
 		2B1A6E2E05086AA4C1E45ED2 /* Sampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C38D43FCA9F29A23E79293 /* Sampler.swift */; };
 		2F0FB43E3E36836E2D5E8AF5 /* ProfileProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A9F83D12D1403FF6612FE9 /* ProfileProbe.swift */; };
@@ -28,17 +30,19 @@
 		9179F3A983449116651A55CA /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4636C09BC360B1EB77B88B3A /* ELM327.swift */; };
 		A5811714E31255FAA7465633 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */; };
 		AF00DA254BD09E48B5A32CCE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55AB187BBDB32A2C9983FCE8 /* ContentView.swift */; };
+		B2B33056EDF54C41E99035C2 /* ECULiveness.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D0BAD05340E5D8270FDC4D /* ECULiveness.swift */; };
 		B2B366BE1F890C65D950D0D0 /* OBD2LoggerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B121A065A406069D15F892 /* OBD2LoggerApp.swift */; };
 		B50DF5F35E6C3B783BCFE4A2 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E23E3ED66B38E6B1A084700 /* Profile.swift */; };
 		BA1B210ADEC1BC01B67C2D75 /* ProfileImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4DBBE26D620BAD641CFF1AA /* ProfileImporter.swift */; };
 		BBC710250340496483BA023A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D719D930CFD9413F52BC0A9 /* Preview Assets.xcassets */; };
-		BF1B9F735C5F56951C24E98B /* SilentAudioSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECAEA95E93DE5615AD5B217F /* SilentAudioSession.swift */; };
 		C5FC0F6B12D072CC0B40E201 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172025B3D025651AEA46C425 /* MainShellView.swift */; };
 		CD4E513C8045124378735D95 /* BLEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13DA538359482EEECD45EF7 /* BLEManager.swift */; };
 		D8DA0C2A58846300E127C7AB /* LoggingControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43D2ADBCDA91AAB27F20049 /* LoggingControlsView.swift */; };
 		D9280F3A3E640B8C86E9A9E1 /* ProfileRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF2A12C45554479FD129D85 /* ProfileRegistry.swift */; };
+		E4DA988851EFF23937C0B2CB /* NHTSAClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3312A28E1940E4E09D1449B4 /* NHTSAClient.swift */; };
 		E8FB91515FED7E7E84187EC5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85168347A0F227C8309DE3DC /* Assets.xcassets */; };
 		EA82CA81E4FADF0FF4B6CA3C /* HexParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 278693B6C4C85FF430EE4CC7 /* HexParsing.swift */; };
+		F22331DF14B287C5BC8BAE4C /* RegistryBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2944D63C122E84ABC1A07D2F /* RegistryBuilder.swift */; };
 		F80D5B1D1D53F61B4958ABF8 /* KnownServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BD518F24B371A9D26E6985 /* KnownServices.swift */; };
 		FB22B5DEB4C3DC17FEC8D3B4 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F68C7CAF7FCF43DEB5B45E2 /* SettingsStore.swift */; };
 /* End PBXBuildFile section */
@@ -52,7 +56,11 @@
 		1D719D930CFD9413F52BC0A9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		1E23E3ED66B38E6B1A084700 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		278693B6C4C85FF430EE4CC7 /* HexParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexParsing.swift; sourceTree = "<group>"; };
+		2944D63C122E84ABC1A07D2F /* RegistryBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegistryBuilder.swift; sourceTree = "<group>"; };
 		2D24879FFFD91FBB91269B58 /* OBD2Logger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OBD2Logger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2EABACB115B324F4965CE172 /* LocationKeepAlive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationKeepAlive.swift; sourceTree = "<group>"; };
+		2EDDFD70B112D737500F7D9C /* StandardPids.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardPids.swift; sourceTree = "<group>"; };
+		3312A28E1940E4E09D1449B4 /* NHTSAClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NHTSAClient.swift; sourceTree = "<group>"; };
 		33D1CE8428B1971BC15E8039 /* AddVehicleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddVehicleView.swift; sourceTree = "<group>"; };
 		4636C09BC360B1EB77B88B3A /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
 		4C74282B07C51F6A29CFF9EB /* VehicleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStore.swift; sourceTree = "<group>"; };
@@ -71,13 +79,13 @@
 		C1A3ADD6AC4750BA0B21746E /* AppStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStorage.swift; sourceTree = "<group>"; };
 		C7B121A065A406069D15F892 /* OBD2LoggerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBD2LoggerApp.swift; sourceTree = "<group>"; };
 		CBBFB7ED4462071E11A2FE3F /* DevicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePickerView.swift; sourceTree = "<group>"; };
+		D1D0BAD05340E5D8270FDC4D /* ECULiveness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ECULiveness.swift; sourceTree = "<group>"; };
 		D4DBBE26D620BAD641CFF1AA /* ProfileImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileImporter.swift; sourceTree = "<group>"; };
 		D5E1FEEF3F1957049703A731 /* Vehicle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vehicle.swift; sourceTree = "<group>"; };
 		D8A9F83D12D1403FF6612FE9 /* ProfileProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileProbe.swift; sourceTree = "<group>"; };
 		DE4000375142418EFA018A9C /* CSVWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVWriter.swift; sourceTree = "<group>"; };
 		E37429C83F1BF8E4440C4AF0 /* Profiles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Profiles; path = ../src/profiles/builtin; sourceTree = SOURCE_ROOT; };
 		E43D2ADBCDA91AAB27F20049 /* LoggingControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingControlsView.swift; sourceTree = "<group>"; };
-		ECAEA95E93DE5615AD5B217F /* SilentAudioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentAudioSession.swift; sourceTree = "<group>"; };
 		F13DA538359482EEECD45EF7 /* BLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -87,6 +95,7 @@
 			children = (
 				C1A3ADD6AC4750BA0B21746E /* AppStorage.swift */,
 				DE4000375142418EFA018A9C /* CSVWriter.swift */,
+				3312A28E1940E4E09D1449B4 /* NHTSAClient.swift */,
 				13A7FD01EB1974AFF94D9B7C /* SessionRecord.swift */,
 				6F68C7CAF7FCF43DEB5B45E2 /* SettingsStore.swift */,
 				D5E1FEEF3F1957049703A731 /* Vehicle.swift */,
@@ -131,11 +140,14 @@
 		5AF851D9E2E66A5B3A6F740C /* OBD2 */ = {
 			isa = PBXGroup;
 			children = (
+				D1D0BAD05340E5D8270FDC4D /* ECULiveness.swift */,
 				278693B6C4C85FF430EE4CC7 /* HexParsing.swift */,
 				0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */,
 				D8A9F83D12D1403FF6612FE9 /* ProfileProbe.swift */,
+				2944D63C122E84ABC1A07D2F /* RegistryBuilder.swift */,
 				69C38D43FCA9F29A23E79293 /* Sampler.swift */,
 				726CD6FAAC0FF8E87514746E /* StandardPIDDiscovery.swift */,
+				2EDDFD70B112D737500F7D9C /* StandardPids.swift */,
 				71041E5EB030CA9C467F0BCF /* VINReader.swift */,
 			);
 			path = OBD2;
@@ -190,7 +202,7 @@
 		AEC17AEE66D50435A28C5EA5 /* Background */ = {
 			isa = PBXGroup;
 			children = (
-				ECAEA95E93DE5615AD5B217F /* SilentAudioSession.swift */,
+				2EABACB115B324F4965CE172 /* LocationKeepAlive.swift */,
 			);
 			path = Background;
 			sourceTree = "<group>";
@@ -283,26 +295,30 @@
 				1D82AD8BD2858E4E8341AFC8 /* ConnectionView.swift in Sources */,
 				AF00DA254BD09E48B5A32CCE /* ContentView.swift in Sources */,
 				1B9395F68B8969D469264288 /* DevicePickerView.swift in Sources */,
+				B2B33056EDF54C41E99035C2 /* ECULiveness.swift in Sources */,
 				9179F3A983449116651A55CA /* ELM327.swift in Sources */,
 				879262E993A00188C9005745 /* FormulaEvaluator.swift in Sources */,
 				EA82CA81E4FADF0FF4B6CA3C /* HexParsing.swift in Sources */,
 				F80D5B1D1D53F61B4958ABF8 /* KnownServices.swift in Sources */,
 				392A6099BB0CD4CB881EF8A5 /* LiveReadoutView.swift in Sources */,
+				1DA20A85EADFDC979ADAB62E /* LocationKeepAlive.swift in Sources */,
 				D8DA0C2A58846300E127C7AB /* LoggingControlsView.swift in Sources */,
 				70197F79095F5FDFA041AEC4 /* LoggingSession.swift in Sources */,
 				C5FC0F6B12D072CC0B40E201 /* MainShellView.swift in Sources */,
+				E4DA988851EFF23937C0B2CB /* NHTSAClient.swift in Sources */,
 				B2B366BE1F890C65D950D0D0 /* OBD2LoggerApp.swift in Sources */,
 				A5811714E31255FAA7465633 /* OnboardingView.swift in Sources */,
 				B50DF5F35E6C3B783BCFE4A2 /* Profile.swift in Sources */,
 				BA1B210ADEC1BC01B67C2D75 /* ProfileImporter.swift in Sources */,
 				2F0FB43E3E36836E2D5E8AF5 /* ProfileProbe.swift in Sources */,
 				D9280F3A3E640B8C86E9A9E1 /* ProfileRegistry.swift in Sources */,
+				F22331DF14B287C5BC8BAE4C /* RegistryBuilder.swift in Sources */,
 				2B1A6E2E05086AA4C1E45ED2 /* Sampler.swift in Sources */,
 				689E20DA99AC09C55E151C07 /* SessionRecord.swift in Sources */,
 				2A309B266EDD3C6B905BAD0B /* SessionsListView.swift in Sources */,
 				FB22B5DEB4C3DC17FEC8D3B4 /* SettingsStore.swift in Sources */,
-				BF1B9F735C5F56951C24E98B /* SilentAudioSession.swift in Sources */,
 				1B1CF3D1EEFC5FE6AD585D35 /* StandardPIDDiscovery.swift in Sources */,
+				100ECA5F27FBA097AA0B3FC6 /* StandardPids.swift in Sources */,
 				8D356E578CCDE1F1918E8625 /* VINReader.swift in Sources */,
 				0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */,
 				5E395A763AB18B13A8E91931 /* VehicleManagerView.swift in Sources */,

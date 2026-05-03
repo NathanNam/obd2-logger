@@ -18,7 +18,7 @@ struct MainShellView: View {
                             .foregroundStyle(.red)
                     }
 
-                    VehicleManagerView()
+                    VehicleManagerView(elm: elm)
 
                     ConnectionView(elm: elm)
 
@@ -37,7 +37,6 @@ struct MainShellView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             vehicleStore.reload(owner: settings.owner)
-            elm.attach()
         }
     }
 

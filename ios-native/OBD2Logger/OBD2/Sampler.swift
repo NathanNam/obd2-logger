@@ -25,6 +25,7 @@ final class Sampler {
 
     private let elm: ELM327
     private let pids: [PidDef]
+    private let ecus: [String: EcuDef]
     private let evaluator: FormulaEvaluator
     private let sampleRateHz: Double
     private let sessionStartMs: Int
@@ -43,12 +44,14 @@ final class Sampler {
     init(
         elm: ELM327,
         pids: [PidDef],
+        ecus: [String: EcuDef],
         sampleRateHz: Double,
         sessionStartMs: Int,
         evaluator: FormulaEvaluator = FormulaEvaluator()
     ) {
         self.elm = elm
         self.pids = pids
+        self.ecus = ecus
         self.sampleRateHz = sampleRateHz
         self.sessionStartMs = sessionStartMs
         self.evaluator = evaluator
@@ -85,47 +88,68 @@ final class Sampler {
         let timestampISO = ISO8601DateFormatter.utcMs.string(from: Date())
 
         var values: [String: String] = [:]
-        for pid in pids where !disabledPIDs.contains(pid.id) {
-            let request = pid.mode + pid.pid
-            do {
-                let response = try await elm.send(request, timeout: 1.0)
-                let normalized = response.uppercased()
-                    .replacingOccurrences(of: " ", with: "")
-                    .replacingOccurrences(of: "\n", with: "")
-                    .replacingOccurrences(of: "\r", with: "")
-                if normalized.contains("NODATA") {
+        // Group enabled PIDs by ECU. For each group, set ATSH<request_header>
+        // once before issuing the PIDs in that group. Without this, Mode 21
+        // PIDs on non-engine ECUs (hybrid_controller, transmission) get
+        // delivered to the wrong ECU via the broadcast functional address
+        // and silently return NO_DATA. Mirrors the web sampler's behavior
+        // (`src/obd/sampler.ts` groupByEcu + ATSH before each group).
+        let groups = groupByEcu(pids.filter { !disabledPIDs.contains($0.id) })
+        for (ecuName, groupPIDs) in groups {
+            if let ecu = ecus[ecuName] {
+                _ = try? await elm.send("ATSH\(ecu.requestHeader)", timeout: 0.8)
+            }
+            for pid in groupPIDs {
+                let request = pid.mode + pid.pid
+                do {
+                    let response = try await elm.send(request, timeout: 1.0)
+                    let normalized = response.uppercased()
+                        .replacingOccurrences(of: " ", with: "")
+                        .replacingOccurrences(of: "\n", with: "")
+                        .replacingOccurrences(of: "\r", with: "")
+                    if normalized.contains("NODATA") {
+                        bumpStrike(pid.id)
+                        continue
+                    }
+                    guard let bytes = HexParsing.bytes(normalized) else { continue }
+                    guard let payload = stripResponseCode(bytes: bytes, mode: pid.mode, pid: pid.pid) else {
+                        continue
+                    }
+                    strikes[pid.id] = 0  // success → reset strike counter
+                    let evaluated = evaluator.evaluate(formula: pid.formula, bytes: payload)
+                    let formatted: String = {
+                        if let v = evaluated {
+                            return Sampler.format(value: v)
+                        } else {
+                            return HexParsing.hex(payload)
+                        }
+                    }()
+                    values[pid.id] = formatted
+                    let live = LiveValue(
+                        pidID: pid.id,
+                        raw: HexParsing.hex(payload),
+                        value: evaluated,
+                        unit: pid.unit,
+                        displayName: pid.displayName
+                    )
+                    onValue?(live)
+                } catch {
                     bumpStrike(pid.id)
                     continue
                 }
-                guard let bytes = HexParsing.bytes(normalized) else { continue }
-                guard let payload = stripResponseCode(bytes: bytes, mode: pid.mode, pid: pid.pid) else {
-                    continue
-                }
-                strikes[pid.id] = 0  // success → reset strike counter
-                let evaluated = evaluator.evaluate(formula: pid.formula, bytes: payload)
-                let formatted: String = {
-                    if let v = evaluated {
-                        return Sampler.format(value: v)
-                    } else {
-                        return HexParsing.hex(payload)
-                    }
-                }()
-                values[pid.id] = formatted
-                let live = LiveValue(
-                    pidID: pid.id,
-                    raw: HexParsing.hex(payload),
-                    value: evaluated,
-                    unit: pid.unit,
-                    displayName: pid.displayName
-                )
-                onValue?(live)
-            } catch {
-                // Timeout or error → strike, continue.
-                bumpStrike(pid.id)
-                continue
             }
         }
         return TickRow(timestampISO: timestampISO, elapsedMs: elapsedMs, values: values)
+    }
+
+    /// Stable iteration order: sort ECU names alphabetically so output is
+    /// deterministic for any given profile.
+    private func groupByEcu(_ pids: [PidDef]) -> [(String, [PidDef])] {
+        var grouped: [String: [PidDef]] = [:]
+        for pid in pids {
+            grouped[pid.ecu, default: []].append(pid)
+        }
+        return grouped.keys.sorted().map { ($0, grouped[$0]!) }
     }
 
     private func bumpStrike(_ id: String) {

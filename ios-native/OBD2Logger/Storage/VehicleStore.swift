@@ -58,6 +58,19 @@ final class VehicleStore {
         }
     }
 
+    /// Wipe the cached supported-PID lists on a vehicle so the next logging
+    /// session re-runs standard discovery + profile probe. Use when the
+    /// existing cache is suspected stale (e.g. populated by an earlier
+    /// version with buggy ECU addressing).
+    func clearPIDCaches(slug: String, owner: String) throws {
+        guard var vehicle = vehicles.first(where: { $0.slug == slug && $0.owner == owner }) else {
+            return
+        }
+        vehicle.supportedStandardPIDs = []
+        vehicle.supportedProfilePIDs = []
+        try save(vehicle)
+    }
+
     func delete(slug: String, owner: String) throws {
         try AppStorage.shared.remove(AppPath.vehicleDir(owner, slug))
         vehicles.removeAll { $0.slug == slug }
