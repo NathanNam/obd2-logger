@@ -6,6 +6,9 @@ const config: CapacitorConfig = {
   webDir: "dist",
   ios: {
     contentInset: "always",
+    // Without this, iOS's safe-area gap above the WebView shows through as
+    // white, which is jarring next to the dark UI. Matches --bg in styles.css.
+    backgroundColor: "#0e0f12",
   },
   plugins: {
     BluetoothLe: {
