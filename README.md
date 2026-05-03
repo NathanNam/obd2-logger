@@ -94,7 +94,7 @@ timestamp_utc,session_elapsed_ms,rpm,speed,coolant_temp,...
 2026-05-02T17:23:10.412Z,1000,825,0,84,...
 ```
 
-See [`examples/2026-05-03T07-55-45Z__2z6wg3dj.csv`](examples/2026-05-03T07-55-45Z__2z6wg3dj.csv) for a real 10-row session captured from the 2020 Lexus RX 450hL — 50+ columns spanning standard Mode-01 PIDs and the profile's hybrid signals (MG torques, HV voltage, battery temps).
+See [`examples/2026-05-03T07-55-45Z__2z6wg3dj.csv`](examples/2026-05-03T07-55-45Z__2z6wg3dj.csv) for a real 10-row session captured from the 2020 Lexus RX 450hL — 50+ columns spanning standard Mode-01 PIDs and the profile's hybrid signals (MG torques, HV voltage, battery temps). [`examples/README.md`](examples/README.md) documents every column with its display name, unit, PID, ECU, and decode formula.
 
 Open in Excel, pandas (`pd.read_csv(...)`), DuckDB, or any other tool — no preprocessing required.
 
