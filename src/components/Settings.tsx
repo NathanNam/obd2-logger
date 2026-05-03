@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { patchSettings } from "../lib/db";
 import { exportData } from "../lib/export";
 import { renameOwnerDir } from "../lib/fs";
+import { isNative } from "../lib/platform";
+import type { Storage } from "../lib/storage";
 import { listVehicles, putVehicle } from "../lib/vehicles";
 import { exportProfile, importProfileFromFile } from "../profiles/disk";
 import { getAllProfiles } from "../profiles/registry";
@@ -10,12 +12,13 @@ import type { Settings as AppSettings, Vehicle } from "../types";
 
 type Props = {
   settings: AppSettings;
-  rootDir: FileSystemDirectoryHandle;
+  storage: Storage;
   onClose: () => void;
   onSettingsChange: (next: AppSettings) => void;
 };
 
-export function Settings({ settings, rootDir, onClose, onSettingsChange }: Props) {
+export function Settings({ settings, storage, onClose, onSettingsChange }: Props) {
+  const native = isNative();
   const [ownerDraft, setOwnerDraft] = useState(settings.owner);
   const [renameBusy, setRenameBusy] = useState(false);
   const [renameMsg, setRenameMsg] = useState<string | null>(null);
@@ -50,7 +53,7 @@ export function Settings({ settings, rootDir, onClose, onSettingsChange }: Props
     setRenameBusy(true);
     setRenameMsg(null);
     try {
-      await renameOwnerDir(rootDir, settings.owner, next);
+      await renameOwnerDir(storage._legacyWebRoot(), settings.owner, next);
       for (const v of vehicles) {
         await putVehicle({ ...v, owner: next });
       }
@@ -75,8 +78,8 @@ export function Settings({ settings, rootDir, onClose, onSettingsChange }: Props
     try {
       const result =
         scope === "owner"
-          ? await exportData(rootDir, { kind: "owner", owner: settings.owner })
-          : await exportData(rootDir, {
+          ? await exportData(storage._legacyWebRoot(), { kind: "owner", owner: settings.owner })
+          : await exportData(storage._legacyWebRoot(), {
               kind: "vehicle",
               owner: settings.owner,
               slug: scope,
@@ -96,7 +99,7 @@ export function Settings({ settings, rootDir, onClose, onSettingsChange }: Props
     if (!file) return;
     setImportMsg(null);
     try {
-      const profile = await importProfileFromFile(rootDir, file);
+      const profile = await importProfileFromFile(storage, file);
       setImportMsg(`Imported '${profile.profile_id}'.`);
     } catch (err) {
       setImportMsg(err instanceof Error ? err.message : String(err));
@@ -114,27 +117,29 @@ export function Settings({ settings, rootDir, onClose, onSettingsChange }: Props
           <button onClick={onClose}>Close</button>
         </div>
 
-        <section className="settings-section">
-          <h3>Owner</h3>
-          <p className="dim" style={{ marginTop: 0 }}>
-            Used as the top-level folder name under <code>data/</code>.
-          </p>
-          <div className="row" style={{ alignItems: "flex-end" }}>
-            <div className="field" style={{ flex: 1, marginBottom: 0 }}>
-              <label>Current</label>
-              <input
-                type="text"
-                value={ownerDraft}
-                onChange={(e) => setOwnerDraft(e.target.value)}
-                onBlur={(e) => setOwnerDraft(normalizeOwner(e.target.value))}
-              />
+        {!native && (
+          <section className="settings-section">
+            <h3>Owner</h3>
+            <p className="dim" style={{ marginTop: 0 }}>
+              Used as the top-level folder name under <code>data/</code>.
+            </p>
+            <div className="row" style={{ alignItems: "flex-end" }}>
+              <div className="field" style={{ flex: 1, marginBottom: 0 }}>
+                <label>Current</label>
+                <input
+                  type="text"
+                  value={ownerDraft}
+                  onChange={(e) => setOwnerDraft(e.target.value)}
+                  onBlur={(e) => setOwnerDraft(normalizeOwner(e.target.value))}
+                />
+              </div>
+              <button onClick={() => void handleRenameOwner()} disabled={renameBusy}>
+                {renameBusy ? "Renaming…" : "Rename owner"}
+              </button>
             </div>
-            <button onClick={() => void handleRenameOwner()} disabled={renameBusy}>
-              {renameBusy ? "Renaming…" : "Rename owner"}
-            </button>
-          </div>
-          {renameMsg && <div className="dim" style={{ marginTop: 6 }}>{renameMsg}</div>}
-        </section>
+            {renameMsg && <div className="dim" style={{ marginTop: 6 }}>{renameMsg}</div>}
+          </section>
+        )}
 
         <section className="settings-section">
           <h3>VIN auto-decode</h3>
@@ -170,33 +175,45 @@ export function Settings({ settings, rootDir, onClose, onSettingsChange }: Props
           <ProfileExportList />
         </section>
 
-        <section className="settings-section">
-          <h3>Export your data</h3>
-          <p className="dim" style={{ marginTop: 0 }}>
-            Bundle <code>data/{settings.owner}/</code> as a zip you can hand to a
-            friend. Place their <code>data/&lt;their-owner&gt;/</code> in your{" "}
-            <code>data/</code> to receive theirs back.
-          </p>
-          <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-            <button
-              className="primary"
-              onClick={() => void handleExport("owner")}
-              disabled={exportBusy}
-            >
-              {exportBusy ? "Building zip…" : "Export all my data as zip"}
-            </button>
-            {vehicles.map((v) => (
+        {!native && (
+          <section className="settings-section">
+            <h3>Export your data</h3>
+            <p className="dim" style={{ marginTop: 0 }}>
+              Bundle <code>data/{settings.owner}/</code> as a zip you can hand to a
+              friend. Place their <code>data/&lt;their-owner&gt;/</code> in your{" "}
+              <code>data/</code> to receive theirs back.
+            </p>
+            <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
               <button
-                key={v.slug}
-                onClick={() => void handleExport(v.slug)}
+                className="primary"
+                onClick={() => void handleExport("owner")}
                 disabled={exportBusy}
               >
-                Just {v.slug}
+                {exportBusy ? "Building zip…" : "Export all my data as zip"}
               </button>
-            ))}
-          </div>
-          {exportMsg && <div className="dim" style={{ marginTop: 6 }}>{exportMsg}</div>}
-        </section>
+              {vehicles.map((v) => (
+                <button
+                  key={v.slug}
+                  onClick={() => void handleExport(v.slug)}
+                  disabled={exportBusy}
+                >
+                  Just {v.slug}
+                </button>
+              ))}
+            </div>
+            {exportMsg && <div className="dim" style={{ marginTop: 6 }}>{exportMsg}</div>}
+          </section>
+        )}
+        {native && (
+          <section className="settings-section">
+            <h3>Sharing your data</h3>
+            <p className="dim" style={{ marginTop: 0 }}>
+              Your CSVs and metadata live in the OBD2 Logger app folder, accessible
+              from the iOS Files app. From there you can AirDrop, email, or upload
+              them anywhere.
+            </p>
+          </section>
+        )}
       </div>
     </div>
   );

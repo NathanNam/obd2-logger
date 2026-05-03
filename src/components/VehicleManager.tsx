@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ensureOwnerDir } from "../lib/fs";
+import type { Storage } from "../lib/storage";
 import {
   deleteVehicle,
   listVehicles,
@@ -12,7 +12,7 @@ import { VehicleForm } from "./VehicleForm";
 
 type Props = {
   settings: Settings;
-  rootDir: FileSystemDirectoryHandle;
+  storage: Storage;
   activeSlug: string | null;
   onClose: () => void;
   onActivate: (vehicle: Vehicle) => void;
@@ -21,7 +21,7 @@ type Props = {
 
 export function VehicleManager({
   settings,
-  rootDir,
+  storage,
   activeSlug,
   onClose,
   onActivate,
@@ -65,8 +65,7 @@ export function VehicleManager({
       supportedProfilePids: [],
     };
     await putVehicle(updated);
-    const ownerDir = await ensureOwnerDir(rootDir, settings.owner);
-    await writeVehicleJson(ownerDir, updated);
+    await writeVehicleJson(storage, updated);
     await refresh();
   }
 
@@ -138,7 +137,7 @@ export function VehicleManager({
         {adding && (
           <VehicleForm
             settings={settings}
-            rootDir={rootDir}
+            storage={storage}
             existingSlugs={vehicles.map((v) => v.slug)}
             onCancel={() => setAdding(false)}
             onSettingsChange={onSettingsChange}

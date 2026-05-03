@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { patchSettings } from "../lib/db";
+import { isNative } from "../lib/platform";
+import type { Storage } from "../lib/storage";
 import { getVehicle, listVehicles } from "../lib/vehicles";
 import { getProfile } from "../profiles/registry";
 import type { Settings, Vehicle } from "../types";
@@ -13,19 +15,18 @@ import { VehicleManager } from "./VehicleManager";
 
 type Props = {
   settings: Settings;
-  rootDir: FileSystemDirectoryHandle;
-  rootName: string;
+  storage: Storage;
   onResetData: () => void;
   onSettingsChange: (next: Settings) => void;
 };
 
 export function MainShell({
   settings,
-  rootDir,
-  rootName,
+  storage,
   onResetData,
   onSettingsChange,
 }: Props) {
+  const native = isNative();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [active, setActive] = useState<Vehicle | null>(null);
   const [managerOpen, setManagerOpen] = useState(false);
@@ -73,7 +74,7 @@ export function MainShell({
           obd2<span className="tag">/logger</span>
         </div>
         <div className="meta">owner: {settings.owner}</div>
-        <div className="meta">root: {rootName}</div>
+        <div className="meta">root: {storage.label}</div>
         <div className="spacer" />
         <select
           value={active?.slug ?? ""}
@@ -113,28 +114,30 @@ export function MainShell({
           <h2 className="section-title">Logging</h2>
           <LoggingControls
             vehicle={active}
-            rootDir={rootDir}
+            storage={storage}
             settings={settings}
             onSettingsChange={onSettingsChange}
           />
         </section>
-        <section>
-          <h2 className="section-title">PID sweep (archaeology)</h2>
-          <SweepPanel vehicle={active} rootDir={rootDir} settings={settings} />
-        </section>
+        {!native && (
+          <section>
+            <h2 className="section-title">PID sweep (archaeology)</h2>
+            <SweepPanel vehicle={active} storage={storage} settings={settings} />
+          </section>
+        )}
         <section>
           <h2 className="section-title">Live readout</h2>
           <LiveReadout vehicle={active} />
         </section>
         <section>
           <h2 className="section-title">Sessions</h2>
-          <SessionsList vehicle={active} owner={settings.owner} rootDir={rootDir} />
+          <SessionsList vehicle={active} owner={settings.owner} storage={storage} />
         </section>
       </main>
       {managerOpen && (
         <VehicleManager
           settings={settings}
-          rootDir={rootDir}
+          storage={storage}
           activeSlug={active?.slug ?? null}
           onClose={() => {
             setManagerOpen(false);
@@ -150,7 +153,7 @@ export function MainShell({
       {settingsOpen && (
         <SettingsPanel
           settings={settings}
-          rootDir={rootDir}
+          storage={storage}
           onClose={() => {
             setSettingsOpen(false);
             void refresh();
