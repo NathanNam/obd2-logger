@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { FeatureSupport } from "../lib/browser-support";
 
 type Props = {
@@ -15,9 +16,15 @@ export function BrowserSupportGate({ support }: Props) {
         <div className="step">Unsupported browser</div>
         <h1>This browser is missing required APIs</h1>
         <p>
-          OBD2 Logger needs <strong>{missing.join("</strong> and <strong>")}</strong>,
-          which today only ship in Chrome and Edge on desktop (Windows, macOS, or
-          Linux).
+          OBD2 Logger needs{" "}
+          {missing.map((name, i) => (
+            <Fragment key={name}>
+              {i > 0 && " and "}
+              <strong>{name}</strong>
+            </Fragment>
+          ))}
+          , which today only ship in Chrome and Edge on desktop (Windows,
+          macOS, or Linux).
         </p>
         <div className="callout warn">
           Firefox, Safari, and any browser on iOS are not supported in v1. Android
