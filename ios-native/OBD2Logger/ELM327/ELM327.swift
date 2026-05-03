@@ -115,12 +115,14 @@ final class ELM327 {
         // chip after a fresh BLE connection.
         let banner = try await send("ATZ", timeout: 6.0)
         // Adapter sometimes echoes `ATZ` before the banner; just take everything.
-        try await expectOK("ATE0") // turn off echo
-        try await expectOK("ATL0") // line feeds off
-        try await expectOK("ATS0") // spaces off
-        try await expectOK("ATH0") // headers off (hide CAN headers in responses)
-        try await expectOK("ATSP0") // auto-detect protocol
-        try await expectOK("ATCAF1") // CAN automatic formatting (ISO-TP reassembly)
+        // Small inter-command delay — some ELM327 clones need a moment to
+        // process AT-level config changes before the next command lands.
+        try await expectOK("ATE0", postDelayMs: 100)  // turn off echo
+        try await expectOK("ATL0", postDelayMs: 100)  // line feeds off
+        try await expectOK("ATS0", postDelayMs: 100)  // spaces off
+        try await expectOK("ATH0", postDelayMs: 100)  // headers off
+        try await expectOK("ATSP0", postDelayMs: 100) // auto-detect protocol
+        try await expectOK("ATCAF1")                  // CAN automatic formatting
         recordLog(.info, "Init sequence OK.")
         return banner.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -152,11 +154,14 @@ final class ELM327 {
         }
     }
 
-    private func expectOK(_ command: String) async throws {
+    private func expectOK(_ command: String, postDelayMs: Int = 0) async throws {
         let response = try await send(command)
         let normalized = response.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized.contains("OK") else {
             throw ELMError.unexpectedResponse(command: command, response: response)
+        }
+        if postDelayMs > 0 {
+            try await Task.sleep(nanoseconds: UInt64(postDelayMs) * 1_000_000)
         }
     }
 

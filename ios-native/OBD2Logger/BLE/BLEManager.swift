@@ -176,11 +176,19 @@ final class BLEManager: NSObject {
 
     /// Write bytes to the tx characteristic, chunked to 20 bytes (typical
     /// MTU floor for un-negotiated BLE links).
+    ///
+    /// Prefers `.withResponse` if the characteristic supports `.write` even
+    /// when `.writeWithoutResponse` is also supported. The unACKed path is
+    /// faster but lets writes silently drop if the BLE radio queue fills,
+    /// which broke ELM327 init on a Veepeak after the first two commands.
+    /// The web app's `await tx.writeValueWithResponse(...)` works the same
+    /// way; this just makes the iOS side match.
     func send(_ data: Data) async throws {
         guard let peripheral, let picked else { throw BLEError.notConnected }
         let chunkSize = 20
-        let preferNoResponse = picked.tx.properties.contains(.writeWithoutResponse)
-        let writeType: CBCharacteristicWriteType = preferNoResponse ? .withoutResponse : .withResponse
+        let supportsWithResponse = picked.tx.properties.contains(.write)
+        let writeType: CBCharacteristicWriteType =
+            supportsWithResponse ? .withResponse : .withoutResponse
 
         var index = 0
         while index < data.count {
@@ -188,9 +196,8 @@ final class BLEManager: NSObject {
             let chunk = data.subdata(in: index..<end)
             peripheral.writeValue(chunk, for: picked.tx, type: writeType)
             index = end
-            // For .withResponse, CB blocks until the peer acks; for
-            // .withoutResponse, give the radio a moment so we don't flood.
-            if !preferNoResponse {
+            if writeType == .withoutResponse {
+                // No ack — give the radio a brief moment to drain.
                 try await Task.sleep(nanoseconds: 5_000_000) // 5ms
             }
         }
