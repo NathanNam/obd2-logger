@@ -2,7 +2,11 @@ import SwiftUI
 
 struct ConnectionView: View {
     let ble = BLEManager.shared
-    @State private var elm = ELM327()
+    // Shared ELM327 owned by the parent (MainShellView). Must NOT be a
+    // separate @State — two ELM327 instances would race for AsyncStream
+    // chunks from BLEManager.shared.inboundStream and silently swallow
+    // each other's responses.
+    let elm: ELM327
     @State private var showPicker = false
     @State private var statusError: String?
 

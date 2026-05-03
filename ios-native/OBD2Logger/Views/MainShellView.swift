@@ -20,7 +20,7 @@ struct MainShellView: View {
 
                     VehicleManagerView()
 
-                    ConnectionView()
+                    ConnectionView(elm: elm)
 
                     LoggingControlsView(elm: elm)
 
