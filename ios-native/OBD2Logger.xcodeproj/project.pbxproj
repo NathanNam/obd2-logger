@@ -7,21 +7,138 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08E5F5AFF32188DE35000EBA /* AddVehicleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33D1CE8428B1971BC15E8039 /* AddVehicleView.swift */; };
+		0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E1FEEF3F1957049703A731 /* Vehicle.swift */; };
+		1B1CF3D1EEFC5FE6AD585D35 /* StandardPIDDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 726CD6FAAC0FF8E87514746E /* StandardPIDDiscovery.swift */; };
+		1B9395F68B8969D469264288 /* DevicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBBFB7ED4462071E11A2FE3F /* DevicePickerView.swift */; };
+		1D82AD8BD2858E4E8341AFC8 /* ConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C3E051283D8AAFE92D8A5A /* ConnectionView.swift */; };
+		2A309B266EDD3C6B905BAD0B /* SessionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B942AACBC4E12924F1201AC0 /* SessionsListView.swift */; };
+		2B1A6E2E05086AA4C1E45ED2 /* Sampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C38D43FCA9F29A23E79293 /* Sampler.swift */; };
+		2F0FB43E3E36836E2D5E8AF5 /* ProfileProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A9F83D12D1403FF6612FE9 /* ProfileProbe.swift */; };
+		392A6099BB0CD4CB881EF8A5 /* LiveReadoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82C9EF6383420163BAABD158 /* LiveReadoutView.swift */; };
+		3D9F755DD580A55313653862 /* VehicleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C74282B07C51F6A29CFF9EB /* VehicleStore.swift */; };
+		3DF32F803309F796849FD232 /* Profiles in Resources */ = {isa = PBXBuildFile; fileRef = E37429C83F1BF8E4440C4AF0 /* Profiles */; };
+		5E395A763AB18B13A8E91931 /* VehicleManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78BB30FEF564D12F7F743FA9 /* VehicleManagerView.swift */; };
+		689E20DA99AC09C55E151C07 /* SessionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7FD01EB1974AFF94D9B7C /* SessionRecord.swift */; };
+		70197F79095F5FDFA041AEC4 /* LoggingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */; };
+		7197636607CE9B7788273A1A /* CSVWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4000375142418EFA018A9C /* CSVWriter.swift */; };
+		7D85889B9E5901C6200851C3 /* AppStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A3ADD6AC4750BA0B21746E /* AppStorage.swift */; };
+		879262E993A00188C9005745 /* FormulaEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC3F7D95784A3DE1749F16F /* FormulaEvaluator.swift */; };
+		8D356E578CCDE1F1918E8625 /* VINReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71041E5EB030CA9C467F0BCF /* VINReader.swift */; };
+		9179F3A983449116651A55CA /* ELM327.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4636C09BC360B1EB77B88B3A /* ELM327.swift */; };
+		A5811714E31255FAA7465633 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */; };
 		AF00DA254BD09E48B5A32CCE /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55AB187BBDB32A2C9983FCE8 /* ContentView.swift */; };
 		B2B366BE1F890C65D950D0D0 /* OBD2LoggerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7B121A065A406069D15F892 /* OBD2LoggerApp.swift */; };
+		B50DF5F35E6C3B783BCFE4A2 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E23E3ED66B38E6B1A084700 /* Profile.swift */; };
 		BBC710250340496483BA023A /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1D719D930CFD9413F52BC0A9 /* Preview Assets.xcassets */; };
+		BF1B9F735C5F56951C24E98B /* SilentAudioSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECAEA95E93DE5615AD5B217F /* SilentAudioSession.swift */; };
+		C5FC0F6B12D072CC0B40E201 /* MainShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 172025B3D025651AEA46C425 /* MainShellView.swift */; };
+		CD4E513C8045124378735D95 /* BLEManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13DA538359482EEECD45EF7 /* BLEManager.swift */; };
+		D8DA0C2A58846300E127C7AB /* LoggingControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43D2ADBCDA91AAB27F20049 /* LoggingControlsView.swift */; };
+		D9280F3A3E640B8C86E9A9E1 /* ProfileRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BF2A12C45554479FD129D85 /* ProfileRegistry.swift */; };
 		E8FB91515FED7E7E84187EC5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85168347A0F227C8309DE3DC /* Assets.xcassets */; };
+		EA82CA81E4FADF0FF4B6CA3C /* HexParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 278693B6C4C85FF430EE4CC7 /* HexParsing.swift */; };
+		F80D5B1D1D53F61B4958ABF8 /* KnownServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BD518F24B371A9D26E6985 /* KnownServices.swift */; };
+		FB22B5DEB4C3DC17FEC8D3B4 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F68C7CAF7FCF43DEB5B45E2 /* SettingsStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		01BD518F24B371A9D26E6985 /* KnownServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownServices.swift; sourceTree = "<group>"; };
+		0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingSession.swift; sourceTree = "<group>"; };
+		13A7FD01EB1974AFF94D9B7C /* SessionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecord.swift; sourceTree = "<group>"; };
+		172025B3D025651AEA46C425 /* MainShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainShellView.swift; sourceTree = "<group>"; };
 		1D719D930CFD9413F52BC0A9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		1E23E3ED66B38E6B1A084700 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
+		278693B6C4C85FF430EE4CC7 /* HexParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HexParsing.swift; sourceTree = "<group>"; };
 		2D24879FFFD91FBB91269B58 /* OBD2Logger.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OBD2Logger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		33D1CE8428B1971BC15E8039 /* AddVehicleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddVehicleView.swift; sourceTree = "<group>"; };
+		4636C09BC360B1EB77B88B3A /* ELM327.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ELM327.swift; sourceTree = "<group>"; };
+		4C74282B07C51F6A29CFF9EB /* VehicleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStore.swift; sourceTree = "<group>"; };
+		54C3E051283D8AAFE92D8A5A /* ConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionView.swift; sourceTree = "<group>"; };
 		55AB187BBDB32A2C9983FCE8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		69C38D43FCA9F29A23E79293 /* Sampler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sampler.swift; sourceTree = "<group>"; };
+		6F68C7CAF7FCF43DEB5B45E2 /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
+		71041E5EB030CA9C467F0BCF /* VINReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINReader.swift; sourceTree = "<group>"; };
+		726CD6FAAC0FF8E87514746E /* StandardPIDDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardPIDDiscovery.swift; sourceTree = "<group>"; };
+		78BB30FEF564D12F7F743FA9 /* VehicleManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleManagerView.swift; sourceTree = "<group>"; };
+		82C9EF6383420163BAABD158 /* LiveReadoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveReadoutView.swift; sourceTree = "<group>"; };
 		85168347A0F227C8309DE3DC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8BF2A12C45554479FD129D85 /* ProfileRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRegistry.swift; sourceTree = "<group>"; };
+		9EC3F7D95784A3DE1749F16F /* FormulaEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormulaEvaluator.swift; sourceTree = "<group>"; };
+		B942AACBC4E12924F1201AC0 /* SessionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsListView.swift; sourceTree = "<group>"; };
+		C1A3ADD6AC4750BA0B21746E /* AppStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStorage.swift; sourceTree = "<group>"; };
 		C7B121A065A406069D15F892 /* OBD2LoggerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBD2LoggerApp.swift; sourceTree = "<group>"; };
+		CBBFB7ED4462071E11A2FE3F /* DevicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevicePickerView.swift; sourceTree = "<group>"; };
+		D5E1FEEF3F1957049703A731 /* Vehicle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Vehicle.swift; sourceTree = "<group>"; };
+		D8A9F83D12D1403FF6612FE9 /* ProfileProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileProbe.swift; sourceTree = "<group>"; };
+		DE4000375142418EFA018A9C /* CSVWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVWriter.swift; sourceTree = "<group>"; };
+		E37429C83F1BF8E4440C4AF0 /* Profiles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Profiles; path = ../src/profiles/builtin; sourceTree = SOURCE_ROOT; };
+		E43D2ADBCDA91AAB27F20049 /* LoggingControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingControlsView.swift; sourceTree = "<group>"; };
+		ECAEA95E93DE5615AD5B217F /* SilentAudioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SilentAudioSession.swift; sourceTree = "<group>"; };
+		F13DA538359482EEECD45EF7 /* BLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		07FD8624E0E00F5A7F31C01D /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				C1A3ADD6AC4750BA0B21746E /* AppStorage.swift */,
+				DE4000375142418EFA018A9C /* CSVWriter.swift */,
+				13A7FD01EB1974AFF94D9B7C /* SessionRecord.swift */,
+				6F68C7CAF7FCF43DEB5B45E2 /* SettingsStore.swift */,
+				D5E1FEEF3F1957049703A731 /* Vehicle.swift */,
+				4C74282B07C51F6A29CFF9EB /* VehicleStore.swift */,
+			);
+			path = Storage;
+			sourceTree = "<group>";
+		};
+		10478938C8305679A6539896 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				33D1CE8428B1971BC15E8039 /* AddVehicleView.swift */,
+				54C3E051283D8AAFE92D8A5A /* ConnectionView.swift */,
+				CBBFB7ED4462071E11A2FE3F /* DevicePickerView.swift */,
+				82C9EF6383420163BAABD158 /* LiveReadoutView.swift */,
+				E43D2ADBCDA91AAB27F20049 /* LoggingControlsView.swift */,
+				172025B3D025651AEA46C425 /* MainShellView.swift */,
+				0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */,
+				B942AACBC4E12924F1201AC0 /* SessionsListView.swift */,
+				78BB30FEF564D12F7F743FA9 /* VehicleManagerView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		2413E076AAC6F949BF1E084F /* BLE */ = {
+			isa = PBXGroup;
+			children = (
+				F13DA538359482EEECD45EF7 /* BLEManager.swift */,
+				01BD518F24B371A9D26E6985 /* KnownServices.swift */,
+			);
+			path = BLE;
+			sourceTree = "<group>";
+		};
+		2C1DD5E474CBEA7F47D75D40 /* ELM327 */ = {
+			isa = PBXGroup;
+			children = (
+				4636C09BC360B1EB77B88B3A /* ELM327.swift */,
+			);
+			path = ELM327;
+			sourceTree = "<group>";
+		};
+		5AF851D9E2E66A5B3A6F740C /* OBD2 */ = {
+			isa = PBXGroup;
+			children = (
+				278693B6C4C85FF430EE4CC7 /* HexParsing.swift */,
+				0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */,
+				D8A9F83D12D1403FF6612FE9 /* ProfileProbe.swift */,
+				69C38D43FCA9F29A23E79293 /* Sampler.swift */,
+				726CD6FAAC0FF8E87514746E /* StandardPIDDiscovery.swift */,
+				71041E5EB030CA9C467F0BCF /* VINReader.swift */,
+			);
+			path = OBD2;
+			sourceTree = "<group>";
+		};
 		8160A4CAA38D82FC928A0C71 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -34,19 +151,45 @@
 			isa = PBXGroup;
 			children = (
 				ADB314EA7B03B9D650EBCC3B /* OBD2Logger */,
+				E37429C83F1BF8E4440C4AF0 /* Profiles */,
 				8160A4CAA38D82FC928A0C71 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		92DB3EE7C7A5610936BB4791 /* Profiles */ = {
+			isa = PBXGroup;
+			children = (
+				9EC3F7D95784A3DE1749F16F /* FormulaEvaluator.swift */,
+				1E23E3ED66B38E6B1A084700 /* Profile.swift */,
+				8BF2A12C45554479FD129D85 /* ProfileRegistry.swift */,
+			);
+			path = Profiles;
 			sourceTree = "<group>";
 		};
 		ADB314EA7B03B9D650EBCC3B /* OBD2Logger */ = {
 			isa = PBXGroup;
 			children = (
+				AEC17AEE66D50435A28C5EA5 /* Background */,
+				2413E076AAC6F949BF1E084F /* BLE */,
+				2C1DD5E474CBEA7F47D75D40 /* ELM327 */,
+				5AF851D9E2E66A5B3A6F740C /* OBD2 */,
 				DC99E05B0B6A4C450D764697 /* Preview Content */,
+				92DB3EE7C7A5610936BB4791 /* Profiles */,
+				07FD8624E0E00F5A7F31C01D /* Storage */,
+				10478938C8305679A6539896 /* Views */,
 				85168347A0F227C8309DE3DC /* Assets.xcassets */,
 				55AB187BBDB32A2C9983FCE8 /* ContentView.swift */,
 				C7B121A065A406069D15F892 /* OBD2LoggerApp.swift */,
 			);
 			path = OBD2Logger;
+			sourceTree = "<group>";
+		};
+		AEC17AEE66D50435A28C5EA5 /* Background */ = {
+			isa = PBXGroup;
+			children = (
+				ECAEA95E93DE5615AD5B217F /* SilentAudioSession.swift */,
+			);
+			path = Background;
 			sourceTree = "<group>";
 		};
 		DC99E05B0B6A4C450D764697 /* Preview Content */ = {
@@ -119,6 +262,7 @@
 			files = (
 				E8FB91515FED7E7E84187EC5 /* Assets.xcassets in Resources */,
 				BBC710250340496483BA023A /* Preview Assets.xcassets in Resources */,
+				3DF32F803309F796849FD232 /* Profiles in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -129,8 +273,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				08E5F5AFF32188DE35000EBA /* AddVehicleView.swift in Sources */,
+				7D85889B9E5901C6200851C3 /* AppStorage.swift in Sources */,
+				CD4E513C8045124378735D95 /* BLEManager.swift in Sources */,
+				7197636607CE9B7788273A1A /* CSVWriter.swift in Sources */,
+				1D82AD8BD2858E4E8341AFC8 /* ConnectionView.swift in Sources */,
 				AF00DA254BD09E48B5A32CCE /* ContentView.swift in Sources */,
+				1B9395F68B8969D469264288 /* DevicePickerView.swift in Sources */,
+				9179F3A983449116651A55CA /* ELM327.swift in Sources */,
+				879262E993A00188C9005745 /* FormulaEvaluator.swift in Sources */,
+				EA82CA81E4FADF0FF4B6CA3C /* HexParsing.swift in Sources */,
+				F80D5B1D1D53F61B4958ABF8 /* KnownServices.swift in Sources */,
+				392A6099BB0CD4CB881EF8A5 /* LiveReadoutView.swift in Sources */,
+				D8DA0C2A58846300E127C7AB /* LoggingControlsView.swift in Sources */,
+				70197F79095F5FDFA041AEC4 /* LoggingSession.swift in Sources */,
+				C5FC0F6B12D072CC0B40E201 /* MainShellView.swift in Sources */,
 				B2B366BE1F890C65D950D0D0 /* OBD2LoggerApp.swift in Sources */,
+				A5811714E31255FAA7465633 /* OnboardingView.swift in Sources */,
+				B50DF5F35E6C3B783BCFE4A2 /* Profile.swift in Sources */,
+				2F0FB43E3E36836E2D5E8AF5 /* ProfileProbe.swift in Sources */,
+				D9280F3A3E640B8C86E9A9E1 /* ProfileRegistry.swift in Sources */,
+				2B1A6E2E05086AA4C1E45ED2 /* Sampler.swift in Sources */,
+				689E20DA99AC09C55E151C07 /* SessionRecord.swift in Sources */,
+				2A309B266EDD3C6B905BAD0B /* SessionsListView.swift in Sources */,
+				FB22B5DEB4C3DC17FEC8D3B4 /* SettingsStore.swift in Sources */,
+				BF1B9F735C5F56951C24E98B /* SilentAudioSession.swift in Sources */,
+				1B1CF3D1EEFC5FE6AD585D35 /* StandardPIDDiscovery.swift in Sources */,
+				8D356E578CCDE1F1918E8625 /* VINReader.swift in Sources */,
+				0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */,
+				5E395A763AB18B13A8E91931 /* VehicleManagerView.swift in Sources */,
+				3D9F755DD580A55313653862 /* VehicleStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
