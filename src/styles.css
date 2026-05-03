@@ -215,7 +215,49 @@ a {
   min-width: 0;
 }
 
+/* ===========================================================================
+ * Mobile / phone layout (≤ 700px wide).
+ *
+ * Goals: readable touch targets (≥ 36px high), no horizontal overflow, no
+ * iOS auto-zoom on input focus (requires font-size ≥ 16px on text inputs),
+ * gracefully collapse multi-column layouts to single column or stacked cards.
+ * =========================================================================== */
 @media (max-width: 700px) {
+  /* --- Touch targets + iOS-zoom prevention --------------------------------- */
+  button {
+    min-height: 36px;
+    padding: 8px 12px;
+  }
+  button.primary {
+    min-height: 40px;
+  }
+  input[type="text"] {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 16px; /* prevents iOS Safari auto-zoom on focus */
+  }
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+  select.select {
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  /* --- Onboarding / center stage ------------------------------------------- */
+  .center-stage {
+    padding: 16px;
+  }
+  .card {
+    padding: 20px;
+  }
+
+  /* --- App shell ----------------------------------------------------------- */
+  main {
+    padding: 14px !important;
+  }
   .appheader {
     padding: 10px 12px;
     gap: 6px 10px;
@@ -231,16 +273,103 @@ a {
     padding: 6px 10px;
     font-size: 13px;
     white-space: nowrap;
+    min-height: 32px;
   }
-  /* Main content + modals get tighter side padding */
-  main {
-    padding: 14px !important;
+
+  /* --- Connection panel ---------------------------------------------------- */
+  .conn-row {
+    flex-wrap: wrap;
   }
+  .conn-row .spacer {
+    flex-basis: 0;
+  }
+  .conn-meta {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+
+  /* --- Logging controls ---------------------------------------------------- */
+  .logging-controls {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  /* --- Live readout -------------------------------------------------------- */
+  .readout-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .readout-toolbar input {
+    max-width: none;
+    width: 100%;
+  }
+  /* Tighter minmax so 2 PID cards fit per row at ≤ 390px wide */
+  .cat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 6px;
+  }
+  .pid-card {
+    padding: 6px 8px;
+  }
+  .pid-value {
+    font-size: 16px;
+  }
+
+  /* --- Sessions list ------------------------------------------------------- */
+  /* Drop low-value columns on mobile; keep Started, Duration, Rows, Reason. */
+  .session-row {
+    grid-template-columns: 1.6fr 0.7fr 0.5fr 1.2fr;
+    font-size: 11px;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+  .session-row > :nth-child(4),  /* PIDs */
+  .session-row > :nth-child(5),  /* Mean % */
+  .session-row > :nth-child(7) { /* File */
+    display: none;
+  }
+
+  /* --- Modals -------------------------------------------------------------- */
   .modal-backdrop {
     padding: 16px 10px !important;
   }
   .modal-card {
     padding: 16px !important;
+    border-radius: 10px;
+  }
+
+  /* --- Vehicle list rows (Manage vehicles modal) --------------------------- */
+  .vehicle-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .vehicle-row > :first-child {
+    flex: 1 1 100%;
+  }
+
+  /* --- Profile list (Settings → Profiles) ---------------------------------- */
+  .profile-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* --- Forms --------------------------------------------------------------- */
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .vin-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .vin-row > * {
+    width: 100%;
+  }
+
+  /* Generic .row gets wrap so input+button pairs (Onboarding, Settings)
+     gracefully stack instead of overflowing. */
+  .row {
+    flex-wrap: wrap;
   }
 }
 
