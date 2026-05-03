@@ -1,5 +1,4 @@
 import { openDB, type IDBPDatabase } from "idb";
-import type { Storage } from "./storage";
 import type { Vehicle } from "../types";
 
 const DB_NAME = "obd2-logger";
@@ -72,50 +71,28 @@ export type VehicleJsonPayload = Omit<Vehicle, "owner"> & {
   vin_decode_skipped?: boolean;
 };
 
-/** Path to a vehicle's directory under the storage root. */
-export function vehicleDirPath(owner: string, slug: string): string {
-  return `data/${owner}/${slug}`;
-}
-
-/** Path to a vehicle's vehicle.json metadata. */
-export function vehicleJsonPath(owner: string, slug: string): string {
-  return `${vehicleDirPath(owner, slug)}/vehicle.json`;
-}
-
-/** Path to a vehicle's sessions.jsonl manifest. */
-export function sessionsJsonlPath(owner: string, slug: string): string {
-  return `${vehicleDirPath(owner, slug)}/sessions.jsonl`;
-}
-
-/** Path to the sessions/ directory inside a vehicle's dir. */
-export function sessionsDirPath(owner: string, slug: string): string {
-  return `${vehicleDirPath(owner, slug)}/sessions`;
-}
-
 export async function writeVehicleJson(
-  storage: Storage,
+  ownerDir: FileSystemDirectoryHandle,
   vehicle: Vehicle,
   decoded?: VehicleJsonPayload["vin_decoded"],
   skipped?: boolean,
 ): Promise<void> {
-  await storage.ensureDir(vehicleDirPath(vehicle.owner, vehicle.slug));
+  const slugDir = await ownerDir.getDirectoryHandle(vehicle.slug, { create: true });
+  const fileHandle = await slugDir.getFileHandle("vehicle.json", { create: true });
+  const writable = await fileHandle.createWritable();
   const payload: VehicleJsonPayload = {
     ...vehicle,
     ...(decoded ? { vin_decoded: decoded } : {}),
     ...(skipped !== undefined ? { vin_decode_skipped: skipped } : {}),
   };
-  await storage.writeText(
-    vehicleJsonPath(vehicle.owner, vehicle.slug),
-    JSON.stringify(payload, null, 2),
-  );
+  await writable.write(JSON.stringify(payload, null, 2));
+  await writable.close();
 }
 
 export async function ensureSessionsDir(
-  storage: Storage,
-  owner: string,
+  ownerDir: FileSystemDirectoryHandle,
   slug: string,
-): Promise<string> {
-  const path = sessionsDirPath(owner, slug);
-  await storage.ensureDir(path);
-  return path;
+): Promise<FileSystemDirectoryHandle> {
+  const slugDir = await ownerDir.getDirectoryHandle(slug, { create: true });
+  return slugDir.getDirectoryHandle("sessions", { create: true });
 }

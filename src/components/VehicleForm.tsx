@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { patchSettings } from "../lib/db";
 import { decodeVin, type NhtsaResult } from "../lib/nhtsa";
-import type { Storage } from "../lib/storage";
 import {
   buildDisplayName,
   buildSlug,
@@ -9,13 +8,14 @@ import {
   putVehicle,
   writeVehicleJson,
 } from "../lib/vehicles";
+import { ensureOwnerDir } from "../lib/fs";
 import { connection } from "../obd/connection";
 import { getAllProfiles, suggestProfileFor } from "../profiles/registry";
 import type { Settings, Vehicle } from "../types";
 
 type Props = {
   settings: Settings;
-  storage: Storage;
+  rootDir: FileSystemDirectoryHandle;
   onCreated: (vehicle: Vehicle) => void;
   onCancel: () => void;
   onSettingsChange: (next: Settings) => void;
@@ -31,7 +31,7 @@ type DecodeStatus =
 
 export function VehicleForm({
   settings,
-  storage,
+  rootDir,
   onCreated,
   onCancel,
   onSettingsChange,
@@ -185,6 +185,7 @@ export function VehicleForm({
         disabledPids: [],
       };
       await putVehicle(vehicle);
+      const ownerDir = await ensureOwnerDir(rootDir, settings.owner);
       const decoded =
         decode.kind === "ok"
           ? {
@@ -197,12 +198,12 @@ export function VehicleForm({
             }
           : undefined;
       await writeVehicleJson(
-        storage,
+        ownerDir,
         vehicle,
         decoded,
         decode.kind === "skipped" ? true : decode.kind === "ok" ? false : undefined,
       );
-      await ensureSessionsDir(storage, settings.owner, vehicle.slug);
+      await ensureSessionsDir(ownerDir, vehicle.slug);
       onCreated(vehicle);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));

@@ -1,3 +1,4 @@
+import { ensureOwnerDir } from "../lib/fs";
 import { CsvWriter } from "../lib/csv-writer";
 import {
   appendSessionRecord,
@@ -5,12 +6,7 @@ import {
   sessionFilename,
   type SessionRecord,
 } from "../lib/sessions";
-import type { Storage } from "../lib/storage";
-import {
-  ensureSessionsDir,
-  putVehicle,
-  sessionsJsonlPath,
-} from "../lib/vehicles";
+import { ensureSessionsDir, putVehicle } from "../lib/vehicles";
 import { getProfile } from "../profiles/registry";
 import type { Vehicle } from "../types";
 import { connection } from "./connection";
@@ -45,7 +41,7 @@ export class LoggingSession {
   private startMs = 0;
   private startIso = "";
   private sessionId = "";
-  private storage: Storage | null = null;
+  private rootDir: FileSystemDirectoryHandle | null = null;
   private vehicle: Vehicle | null = null;
   private prep: SessionPrep | null = null;
   private currentSampleRateHz: 0.5 | 1 | 2 | 5 = 1;
@@ -89,7 +85,7 @@ export class LoggingSession {
   }
 
   async prepareForVehicle(opts: {
-    storage: Storage;
+    rootDir: FileSystemDirectoryHandle;
     owner: string;
     vehicle: Vehicle;
     rawMode?: boolean;
@@ -152,13 +148,13 @@ export class LoggingSession {
     const enabledColumnIds = registry.filter((e) => e.enabled).map((e) => e.def.id);
     this.prep = { registry, enabledColumnIds };
     this.vehicle = updatedVehicle;
-    this.storage = opts.storage;
+    this.rootDir = opts.rootDir;
     this.setState({ kind: "idle" });
     return this.prep;
   }
 
   async start(opts: {
-    storage: Storage;
+    rootDir: FileSystemDirectoryHandle;
     owner: string;
     vehicle: Vehicle;
     sampleRateHz: 0.5 | 1 | 2 | 5;
@@ -190,14 +186,11 @@ export class LoggingSession {
         ? `raw__${sessionFilename(this.startIso, this.sessionId)}`
         : sessionFilename(this.startIso, this.sessionId);
 
-      const sessionsPath = await ensureSessionsDir(
-        opts.storage,
-        opts.owner,
-        opts.vehicle.slug,
-      );
+      const ownerDir = await ensureOwnerDir(opts.rootDir, opts.owner);
+      const sessionsDir = await ensureSessionsDir(ownerDir, opts.vehicle.slug);
       this.writer = await CsvWriter.create(
-        opts.storage,
-        `${sessionsPath}/${filename}`,
+        sessionsDir,
+        filename,
         prep.enabledColumnIds,
         {
           session_id: this.sessionId,
@@ -285,7 +278,7 @@ export class LoggingSession {
     const writer = this.writer;
     const vehicle = this.vehicle;
     const prep = this.prep;
-    const storage = this.storage;
+    const rootDir = this.rootDir;
     const startIso = this.startIso;
     const startMs = this.startMs;
     const sessionId = this.sessionId;
@@ -302,8 +295,10 @@ export class LoggingSession {
       // ignore
     }
 
-    if (vehicle && prep && storage && writer) {
+    if (vehicle && prep && rootDir && writer) {
       try {
+        const ownerDir = await ensureOwnerDir(rootDir, vehicle.owner);
+        const vehicleDir = await ownerDir.getDirectoryHandle(vehicle.slug, { create: true });
         const endMs = Date.now();
         const profile = getProfile(vehicle.profileId)!;
         const record: SessionRecord = {
@@ -322,11 +317,7 @@ export class LoggingSession {
           mean_pid_completion_pct: meanCompletion,
           raw_mode: this.currentRawMode,
         };
-        await appendSessionRecord(
-          storage,
-          sessionsJsonlPath(vehicle.owner, vehicle.slug),
-          record,
-        );
+        await appendSessionRecord(vehicleDir, record);
       } catch {
         // ignore session log write errors
       }
