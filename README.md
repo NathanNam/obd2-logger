@@ -4,6 +4,8 @@ A browser-based data logger for the OBD2 port. Connect a Bluetooth (BLE) OBD2 ad
 
 **Try it live:** <https://obd2-logger-production.up.railway.app/> — open in Chrome or Edge desktop. All data still lives only on your machine; the hosted version just delivers the static bundle.
 
+![Web app live readout — 2020 Lexus RX 450hL with 44 PIDs across Engine / Hybrid / Battery / Emissions / Diagnostics](examples/obd2-logger-webapp.png)
+
 ## What it does
 
 - **Connects to a BLE OBD2 adapter from Chrome/Edge** via Web Bluetooth.
@@ -48,6 +50,8 @@ npm run preview
 
 A separate native Swift / SwiftUI app targeting iOS 17+ lives in [`ios-native/`](./ios-native). It uses the same JSON profiles bundled into this repo as the web app, but reimplements the OBD2 stack on top of `CoreBluetooth` so it can keep logging in the background while the user has Google Maps (or any other app) in the foreground — something the web/WebView path can't do because iOS suspends WebKit JavaScript when backgrounded. See `ios-native/README.md` for build instructions.
 
+<p align="center"><img src="examples/obd2-logger-ios.png" alt="iOS app — same Lexus, multi-ECU sampling with ATSH addressing, 46 PIDs in the Live readout" width="360"></p>
+
 A previous Capacitor experiment in `ios/` was removed in favor of going pure-native; the WKWebView's JS pause on backgrounding made continuous BLE logging impossible without hacks.
 
 ## First-run flow
@@ -89,6 +93,8 @@ timestamp_utc,session_elapsed_ms,rpm,speed,coolant_temp,...
 2026-05-02T17:23:09.412Z,0,820,0,84,...
 2026-05-02T17:23:10.412Z,1000,825,0,84,...
 ```
+
+See [`examples/2026-05-03T07-55-45Z__2z6wg3dj.csv`](examples/2026-05-03T07-55-45Z__2z6wg3dj.csv) for a real 10-row session captured from the 2020 Lexus RX 450hL — 50+ columns spanning standard Mode-01 PIDs and the profile's hybrid signals (MG torques, HV voltage, battery temps).
 
 Open in Excel, pandas (`pd.read_csv(...)`), DuckDB, or any other tool — no preprocessing required.
 
