@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { ensureOwnerDir } from "../lib/fs";
 import { readSessionsJsonl, type SessionRecord } from "../lib/sessions";
+import type { Storage } from "../lib/storage";
+import { sessionsJsonlPath } from "../lib/vehicles";
 import { useLoggingState } from "../hooks/useLogging";
 import type { Vehicle } from "../types";
 
 type Props = {
   vehicle: Vehicle | null;
   owner: string;
-  rootDir: FileSystemDirectoryHandle;
+  storage: Storage;
 };
 
-export function SessionsList({ vehicle, owner, rootDir }: Props) {
+export function SessionsList({ vehicle, owner, storage }: Props) {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const loggingState = useLoggingState();
@@ -24,9 +25,10 @@ export function SessionsList({ vehicle, owner, rootDir }: Props) {
       }
       setLoading(true);
       try {
-        const ownerDir = await ensureOwnerDir(rootDir, owner);
-        const slugDir = await ownerDir.getDirectoryHandle(vehicle.slug, { create: true });
-        const list = await readSessionsJsonl(slugDir);
+        const list = await readSessionsJsonl(
+          storage,
+          sessionsJsonlPath(owner, vehicle.slug),
+        );
         if (!cancelled) {
           list.sort((a, b) => b.start_utc.localeCompare(a.start_utc));
           setSessions(list);
@@ -41,7 +43,7 @@ export function SessionsList({ vehicle, owner, rootDir }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [vehicle, owner, rootDir, loggingState.kind]);
+  }, [vehicle, owner, storage, loggingState.kind]);
 
   if (!vehicle) return <div className="placeholder">Select a vehicle to see its sessions.</div>;
   if (loading) return <div className="dim">Loading…</div>;

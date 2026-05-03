@@ -2,16 +2,17 @@ import { useConnectionState } from "../hooks/useConnection";
 import { useLoggingState } from "../hooks/useLogging";
 import { logging } from "../obd/logging-session";
 import { patchSettings } from "../lib/db";
+import type { Storage } from "../lib/storage";
 import type { Settings, Vehicle } from "../types";
 
 type Props = {
   vehicle: Vehicle | null;
-  rootDir: FileSystemDirectoryHandle;
+  storage: Storage;
   settings: Settings;
   onSettingsChange: (next: Settings) => void;
 };
 
-export function LoggingControls({ vehicle, rootDir, settings, onSettingsChange }: Props) {
+export function LoggingControls({ vehicle, storage, settings, onSettingsChange }: Props) {
   const conn = useConnectionState();
   const state = useLoggingState();
 
@@ -93,7 +94,7 @@ export function LoggingControls({ vehicle, rootDir, settings, onSettingsChange }
           onClick={() => {
             if (!vehicle) return;
             void logging.start({
-              rootDir,
+              storage,
               owner: settings.owner,
               vehicle,
               sampleRateHz: settings.sampleRateHz,

@@ -1,5 +1,12 @@
+import type { AppendableWriter, Storage } from "./storage";
+
+/**
+ * Streams CSV rows into a single file, with a 1s flush cadence to keep
+ * cross-platform append costs sane. Wraps an AppendableWriter so it works
+ * the same way for File System Access (web) and Capacitor Filesystem (iOS).
+ */
 export class CsvWriter {
-  private stream: FileSystemWritableFileStream;
+  private writer: AppendableWriter;
   private columnIds: string[];
   private metadata: Record<string, string>;
   private rowCount = 0;
@@ -8,24 +15,23 @@ export class CsvWriter {
   private closed = false;
 
   static async create(
-    dir: FileSystemDirectoryHandle,
-    filename: string,
+    storage: Storage,
+    path: string,
     columnIds: string[],
     metadata: Record<string, string> = {},
   ): Promise<CsvWriter> {
-    const file = await dir.getFileHandle(filename, { create: true });
-    const stream = await file.createWritable();
-    const writer = new CsvWriter(stream, columnIds, metadata);
-    await writer.writeHeader();
-    return writer;
+    const writer = await storage.openWriter(path, { append: false });
+    const csv = new CsvWriter(writer, columnIds, metadata);
+    await csv.writeHeader();
+    return csv;
   }
 
   private constructor(
-    stream: FileSystemWritableFileStream,
+    writer: AppendableWriter,
     columnIds: string[],
     metadata: Record<string, string>,
   ) {
-    this.stream = stream;
+    this.writer = writer;
     this.columnIds = columnIds;
     this.metadata = metadata;
   }
@@ -38,7 +44,8 @@ export class CsvWriter {
       ...metaKeys,
       ...this.columnIds,
     ].join(",");
-    await this.stream.write(header + "\n");
+    await this.writer.write(header + "\n");
+    await this.writer.flush();
   }
 
   async writeRow(
@@ -91,7 +98,8 @@ export class CsvWriter {
     if (!this.buffer) return;
     const out = this.buffer;
     this.buffer = "";
-    await this.stream.write(out);
+    await this.writer.write(out);
+    await this.writer.flush();
   }
 
   rows(): number {
@@ -102,7 +110,7 @@ export class CsvWriter {
     if (this.closed) return;
     this.closed = true;
     await this.flush();
-    await this.stream.close();
+    await this.writer.close();
   }
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useConnectionState } from "../hooks/useConnection";
+import type { Storage } from "../lib/storage";
 import {
   runSweepForActiveVehicle,
   type ModeRange,
@@ -12,11 +13,11 @@ import type { Settings, Vehicle } from "../types";
 
 type Props = {
   vehicle: Vehicle | null;
-  rootDir: FileSystemDirectoryHandle;
+  storage: Storage;
   settings: Settings;
 };
 
-export function SweepPanel({ vehicle, rootDir, settings }: Props) {
+export function SweepPanel({ vehicle, storage, settings }: Props) {
   const conn = useConnectionState();
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<SweepProgress | null>(null);
@@ -91,7 +92,7 @@ export function SweepPanel({ vehicle, rootDir, settings }: Props) {
     abortRef.current = new AbortController();
     try {
       const result = await runSweepForActiveVehicle({
-        rootDir,
+        storage,
         owner: settings.owner,
         vehicleSlug: vehicle.slug,
         profileId: vehicle.profileId,
