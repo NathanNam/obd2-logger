@@ -2,6 +2,8 @@
 
 A browser-based data logger for the OBD2 port. Connect a Bluetooth (BLE) OBD2 adapter, pick a folder on your machine, and stream comprehensive vehicle telemetry — including manufacturer-specific data on profiled vehicles — straight to per-vehicle CSV files. No backend, no cloud, no accounts.
 
+**Try it live:** <https://obd2-logger-production.up.railway.app/> — open in Chrome or Edge desktop. All data still lives only on your machine; the hosted version just delivers the static bundle.
+
 ## What it does
 
 - **Connects to a BLE OBD2 adapter from Chrome/Edge** via Web Bluetooth.
