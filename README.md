@@ -44,6 +44,25 @@ npm run build
 npm run preview
 ```
 
+## iOS native build (Capacitor)
+
+The same React codebase also targets iOS as a native shell via [Capacitor](https://capacitorjs.com). The iOS build bridges Web Bluetooth → `CoreBluetooth` (via `@capacitor-community/bluetooth-le`) and File System Access → iOS sandbox (via `@capacitor/filesystem`), so it works on iPhone/iPad where neither web API exists in WebKit.
+
+**One-time setup** (requires Xcode + CocoaPods on macOS):
+
+```bash
+npm install
+npm run ios:add        # generates the ios/ Xcode project
+npm run ios:sync       # builds web bundle and copies it into the iOS app
+npm run ios:open       # opens the workspace in Xcode
+```
+
+Then in Xcode: select a signing team, plug in an iPhone or pick a Simulator, and Run. The Capacitor BLE plugin handles the iOS Bluetooth permission prompt; the purpose string lives in `ios/App/App/Info.plist` under `NSBluetoothAlwaysUsageDescription`.
+
+**After every code change**: `npm run ios:sync` rebuilds the web bundle and pushes it into the Xcode project. No need to re-run `ios:add`.
+
+> **Status note**: as of this commit the BLE transport (`src/obd/ble-transport.ts`) and storage layer (`src/lib/fs.ts`) still use the Web APIs only. The iOS shell will boot but not yet connect to an adapter or write CSVs — those swaps are tracked as follow-up work.
+
 ## First-run flow
 
 1. **Pick a folder.** The app calls `showDirectoryPicker()` and creates `data/` and `profiles/` inside whatever you choose. Documents, a synced Drive folder, a dedicated `obd2/` folder — your call.

@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Runtime data root if the dev picks the repo root as their data folder
+/data
+/profiles
+
+# Capacitor iOS build artifacts (the ios/ Xcode project itself is committed,
+# but it ships its own .gitignore for build outputs / Pods)
+ios/App/Pods
+ios/App/build
+ios/DerivedData
+ios/.bundle
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
