@@ -52,32 +52,27 @@ final class ProfileRegistry {
     private func load() {
         loadError = nil
         var loaded: [Profile] = []
+        var seenIDs: Set<String> = []
 
-        // xcodegen ignores `name:` for folder-reference resources — it
-        // copies the source folder verbatim, so the bundle path is the
-        // last component of `path: ../src/profiles/builtin` → `builtin`.
-        guard let profilesDir = Bundle.main.url(
-            forResource: "builtin",
-            withExtension: nil
-        ) else {
+        // 1) Bundled profiles. xcodegen ignores `name:` for folder-reference
+        //    resources, so the bundle path is the last component of
+        //    `path: ../src/profiles/builtin` → `builtin`.
+        if let bundledDir = Bundle.main.url(forResource: "builtin", withExtension: nil) {
+            loaded.append(contentsOf: loadJSONs(from: bundledDir, seen: &seenIDs))
+        } else {
             loadError = "Profiles directory missing from app bundle. Run xcodegen."
-            return
         }
 
-        let fm = FileManager.default
-        guard let entries = try? fm.contentsOfDirectory(at: profilesDir, includingPropertiesForKeys: nil) else {
-            loadError = "Could not list profiles directory at \(profilesDir.path)."
-            return
-        }
-
-        for url in entries where url.pathExtension.lowercased() == "json" {
-            do {
-                let data = try Data(contentsOf: url)
-                let profile = try JSONDecoder().decode(Profile.self, from: data)
-                loaded.append(profile)
-            } catch {
-                loadError = "Failed to parse \(url.lastPathComponent): \(error.localizedDescription)"
-            }
+        // 2) User-imported profiles in Documents/profiles/. These override
+        //    bundled profiles with the same profile_id (so a user can swap
+        //    in a tweaked version of a built-in).
+        let userDir = AppStorage.shared.url(for: "profiles")
+        if FileManager.default.fileExists(atPath: userDir.path) {
+            // Re-load user profiles allowing them to take precedence over
+            // bundled ones — pre-strip any bundled entries with the same id.
+            let userProfiles = loadJSONs(from: userDir, seen: &seenIDs, override: true)
+            loaded.removeAll { existing in userProfiles.contains { $0.profileId == existing.profileId } }
+            loaded.append(contentsOf: userProfiles)
         }
 
         // Stable ordering: generic first, then alphabetical by display name.
@@ -89,5 +84,32 @@ final class ProfileRegistry {
         }
 
         profiles = loaded
+    }
+
+    private func loadJSONs(
+        from dir: URL,
+        seen: inout Set<String>,
+        override: Bool = false
+    ) -> [Profile] {
+        var out: [Profile] = []
+        let fm = FileManager.default
+        guard let entries = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else {
+            return out
+        }
+        for url in entries where url.pathExtension.lowercased() == "json" {
+            // Skip the template marker file from community-profiles/.
+            if url.lastPathComponent.hasPrefix("_") { continue }
+            do {
+                let data = try Data(contentsOf: url)
+                let profile = try JSONDecoder().decode(Profile.self, from: data)
+                if override || !seen.contains(profile.profileId) {
+                    out.append(profile)
+                    seen.insert(profile.profileId)
+                }
+            } catch {
+                loadError = "Failed to parse \(url.lastPathComponent): \(error.localizedDescription)"
+            }
+        }
+        return out
     }
 }

@@ -1,0 +1,47 @@
+{
+  "profile_id": "your-vehicle-slug",
+  "profile_version": "0.1.0-partial",
+  "display_name": "Your Vehicle (year-range) — PARTIAL",
+  "description": "One-paragraph summary: which generation, what's covered, what's NOT covered. Be honest about scope — 'partial' is fine, 'unvalidated' is fine.",
+  "vehicle_match": {
+    "make": "Manufacturer",
+    "models": ["Model A", "Model B"],
+    "year_min": 2020,
+    "year_max": 2024
+  },
+  "ecus": {
+    "engine": {
+      "request_header": "7E0",
+      "response_header": "7E8"
+    },
+    "hybrid_controller": {
+      "request_header": "7E2",
+      "response_header": "7EA"
+    }
+  },
+  "pids": [
+    {
+      "id": "example_pid",
+      "display_name": "Example PID",
+      "ecu": "engine",
+      "mode": "21",
+      "pid": "01",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    }
+  ],
+  "sources": [
+    "https://example.com/forum-thread-where-you-found-the-pid-list",
+    "Empirical sweep against (your name)'s (year/make/model)"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "(year/make/model) ((your name)'s)",
+      "date": "2026-XX-XX",
+      "notes": "What you actually tested. Be specific about which PIDs you verified, what method you used (held-state sweep, raw-hex diff, comparison against community ground truth), and what's still untested. Example: 'Verified example_pid DE bytes at idle (= 0x8000 ≈ 0 Nm) and during gentle acceleration (DE varies +200..+1500 Nm). Did NOT test regen, sustained cruise, or cold-start behavior.'"
+    }
+  ]
+}
