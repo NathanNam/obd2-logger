@@ -52,6 +52,12 @@ final class ELM327 {
         inboundTask = Task { [weak self] in
             for await data in stream {
                 guard let self else { break }
+                // Log raw bytes as hex so we can see exactly what the adapter
+                // sends, separate from the framed `>`-terminated responses.
+                // Critical for debugging when the framing seems to swallow
+                // a response.
+                let hex = data.map { String(format: "%02X", $0) }.joined(separator: " ")
+                self.recordLog(.info, "raw " + hex)
                 guard let chunk = String(data: data, encoding: .ascii) else { continue }
                 self.consume(chunk)
             }
@@ -114,10 +120,10 @@ final class ELM327 {
         // 6s timeout — some clones take a couple seconds to cold-boot the
         // chip after a fresh BLE connection.
         let banner = try await send("ATZ", timeout: 6.0)
-        // Adapter sometimes echoes `ATZ` before the banner; just take everything.
-        // Small inter-command delay — some ELM327 clones need a moment to
-        // process AT-level config changes before the next command lands.
-        try await expectOK("ATE0", postDelayMs: 100)  // turn off echo
+        // ATE0 turns echo off, which changes the response shape. Some
+        // adapters need a longer settle time after this specific command —
+        // 500ms is generous but avoids races on slow clones.
+        try await expectOK("ATE0", postDelayMs: 500)  // turn off echo
         try await expectOK("ATL0", postDelayMs: 100)  // line feeds off
         try await expectOK("ATS0", postDelayMs: 100)  // spaces off
         try await expectOK("ATH0", postDelayMs: 100)  // headers off
