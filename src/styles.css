@@ -188,7 +188,8 @@ a {
 .appheader {
   display: flex;
   align-items: center;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 8px 14px;
   padding: 12px 20px;
   background: var(--bg-elev);
   border-bottom: 1px solid var(--border);
@@ -198,6 +199,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.04em;
   color: var(--fg);
+  white-space: nowrap;
 }
 .appheader .brand .tag {
   color: var(--accent);
@@ -206,6 +208,40 @@ a {
   font-family: var(--mono);
   font-size: 12px;
   color: var(--fg-faint);
+  white-space: nowrap;
+}
+.appheader .select {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .appheader {
+    padding: 10px 12px;
+    gap: 6px 10px;
+  }
+  .appheader .meta {
+    font-size: 11px;
+  }
+  /* Spacer collapses so trailing buttons sit next to the select on a wrap row */
+  .appheader .spacer {
+    flex-basis: 0;
+  }
+  .appheader button {
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  /* Main content + modals get tighter side padding */
+  main {
+    padding: 14px !important;
+  }
+  .modal-backdrop {
+    padding: 16px 10px !important;
+  }
+  .modal-card {
+    padding: 16px !important;
+  }
 }
 
 .placeholder {
