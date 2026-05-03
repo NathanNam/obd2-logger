@@ -1,0 +1,13 @@
+{
+  "profile_id": "generic-obd2",
+  "profile_version": "1.0.0",
+  "display_name": "Generic OBD2",
+  "description": "Universal fallback. Auto-discovers and logs whichever standard mode-01 PIDs the vehicle reports as supported. No manufacturer-specific data.",
+  "ecus": {
+    "engine": { "request_header": "7E0", "response_header": "7E8" }
+  },
+  "pids": [],
+  "sources": [
+    "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  ]
+}

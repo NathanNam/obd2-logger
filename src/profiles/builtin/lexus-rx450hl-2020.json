@@ -1,0 +1,131 @@
+{
+  "profile_id": "lexus-rx450hl-2020",
+  "profile_version": "0.6.0-partial",
+  "display_name": "Lexus RX 450h / 450hL (2020-2022) — PARTIAL",
+  "description": "Validated against a real 2020 RX450hL via three PID sweeps (moving, idle-on-battery, mode 22) and a raw-hex driving capture. The complete telemetry surface on this vehicle: Mode 21 PIDs 00-FF on engine (7E0) and hybrid_controller (7E2), 63 responding each. Transmission (7E1), battery_controller (7E3), and Mode 22 (UDS ReadDataByIdentifier) on every ECU are all confirmed unavailable — battery_controller/transmission silently return NO_DATA, Mode 22 returns 7F 22 11 (serviceNotSupported). HV battery telemetry on this generation is exposed via hybrid_controller, not its own ECU. Of the 126 responding PIDs, 27 are live signals and 99 are static (firmware versions, calibration constants, VIN segments). This profile ships only the high-confidence subset; remaining live PIDs are identified as candidates in validated_against — extending requires capturing held states (cruise, regen, ICE-on idle) and diffing.",
+  "vehicle_match": {
+    "make": "Lexus",
+    "models": ["RX450h", "RX450hL", "RX 450h", "RX 450hL"],
+    "year_min": 2020,
+    "year_max": 2022
+  },
+  "ecus": {
+    "engine":             { "request_header": "7E0", "response_header": "7E8" },
+    "hybrid_controller":  { "request_header": "7E2", "response_header": "7EA" }
+  },
+  "pids": [
+    {
+      "id": "mg2_torque",
+      "display_name": "MG2 torque",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "62",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    },
+    {
+      "id": "mg1_torque",
+      "display_name": "MG1 torque",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "61",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    },
+    {
+      "id": "mgr_torque",
+      "display_name": "MGR torque (rear)",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "63",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    },
+    {
+      "id": "hv_voltage",
+      "display_name": "HV pack voltage",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "98",
+      "unit": "V",
+      "formula": "(A*256+B)/100",
+      "category": "battery",
+      "min": 200,
+      "max": 350
+    },
+    {
+      "id": "battery_temp_1",
+      "display_name": "Battery temp 1",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "A",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "battery_temp_2",
+      "display_name": "Battery temp 2",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "B",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "battery_temp_3",
+      "display_name": "Battery temp 3",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "C",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "battery_temp_4",
+      "display_name": "Battery temp 4",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "D",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    }
+  ],
+  "sources": [
+    "https://www.clublexus.com/forums/hybrid-technology/",
+    "https://priuschat.com/threads/lexus-rx400h-custom-pids.109720/",
+    "Empirical PID sweeps against Nathan's 2020 RX450hL: sweep__2026-05-03T00-03-52Z.json (moving) and sweep__2026-05-03T00-20-06Z.json (idle on battery)"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "2020 Lexus RX450hL (Nathan's)",
+      "date": "2026-05-03",
+      "notes": "Idle-on-battery snapshot (engine off, EV mode, parked) compared against a moving snapshot from earlier sweep. Confirmed: PID 61/62/63 (MG1/MG2/MGR torques) all read bytes D,E = 80 00 = 0 Nm at engine-off idle, validating the ((D*256+E)-32768)/8 formula across all three motor-generators. PID 95 reads four bytes around 0x19 = 25 at ambient, confirming raw byte = °C for cell-block temperatures (4 sensors distributed in the pack). PID 98 bytes A,B drop from 0x8062 (328.6 V) at idle to 0x77C6 (306.2 V) under acceleration — a 22 V sag under load that fits a 288 V nominal RX450hL HV pack discharging into MG2 at +232 Nm; formula (A*256+B)/100, unit V. UNRESOLVED candidates worth investigating: PIDs 70/71/72 each have 4-byte responses with byte A varying around 0x44-0x4D — three sequential PIDs, three inverters in the RX450hL drivetrain (MG1/MG2/MGR), plausibly inverter temps with formula A-40 °C. PID 79 bytes A,B varied 0x3333→0x27AE between idle and moving — possibly SOC-related. PIDs 81, 87, 8A, 8E, 92 all change substantially but layout unclear without a third data point. PID 67 (5 bytes, 8000 8000 00 at idle, ~8000 8002 00 moving) is suspicious — values stay near zero even when moving, so likely commanded torque limits or status word, not RPMs. To extend further: capture 30-second raw-hex sessions at constant 60 km/h cruise, hard accel, and strong regen, then diff."
+    },
+    {
+      "vehicle": "2020 Lexus RX450hL (Nathan's)",
+      "date": "2026-05-02",
+      "notes": "Cross-file byte-slice diff across three raw-hex captures: raw__2026-05-02T23-45-12Z (early driving), raw__2026-05-03T00-00-29Z (stationary control — mg1/mg2/mgr DE clamp to 32761–32770 ≈ 0x8000), and raw__2026-05-03T00-51-22Z (varied-state drive, 116 rows). Methodology: each multi-byte response column is split into per-byte and adjacent byte-pair candidates and correlated (Pearson) against throttle_pos / engine_load / rpm / speed, with bucket means across idle/cruise/accel windows. Tooling: scripts/identify-mg-bytes.py. CONFIRMED: mg1_torque PID 61 byte DE = torque. r=+0.74 throttle, +0.49 engine_load, +0.58 rpm; idle 31568 → cruise 33338 → accel 37314 with 0x8000=neutral; stationary file clamps DE to [32761,32768]. CONFIRMED: mg2_torque PID 62 and mgr_torque PID 63 byte DE = torque. Pearson against state signals alone was misleading — DE correlated r≈+0.95 with vehicle speed, raising the possibility these were MG2/MGR speed (gear-coupled to wheels) rather than torque. The disambiguating test is constant-speed variance: at speed=0x00 (8 rows, wheels physically stationary) DE still varied by Δ680 raw counts (mg2) and Δ529 (mgr), equivalent to −17 to +68 Nm and −12 to +54 Nm under (DE−32768)/8 — plausible creep/regen pulses at a stop. RPM at zero wheel speed must be zero, so the high speed-correlation was a coupled-state artifact (heavier accel → higher speed AND higher torque demand). mg1 DE also swings much wider per unit speed (Δ 5812–7845 at speed=0x18 vs mg2's ~1200), consistent with MG1 absorbing larger torque excursions to balance engine load through the planetary gearset. Existing ((D*256+E)−32768)/8 → Nm formula on PID 61/62/63 stands. CONFIRMED CLEAN: PID 95 bytes A/B/C/D consistently report four module temperatures at 0x18–0x1A (24–26 °C) at ambient — four-byte → four-cell-block layout and the °C-as-raw-byte formula are correct. OBSERVED: byte B is a fixed marker on all three MG PIDs — 0x46 on PID 61, 0x44 on PID 62, 0x39 on PID 63 — identical across every session and every row. Bytes A and C drift slowly across each session (counter-like, not state-driven). UNRESOLVED: hv_voltage PID 98. Byte D is constant 0xBC across all 116 rows of the May 2 session, indicating a marker/checksum byte rather than data. The (A*256+B)/100 V formula produced AB up to 40926 (= 409.26 V) at idle — physically impossible for a 288 V nominal pack — while still hitting the expected ~328 V at other idle rows. AB likely packs a status or counter into byte A or B in some states, or needs a different decoding when a high-nibble flag is set. Bytes B (range 0x01–0xFF, wraps) and C (range 0x40–0x52) remain unidentified. NEW CANDIDATE: a 4-byte PID currently mapped to the column 'fuel_pressure_meas' in the two earlier captures (dropped from the 0.5.0-partial profile) shows byte D correlating r=+0.81 with engine_load (range [0,4], 0 in stationary capture). Worth re-identifying — likely a real load-tracking signal, possibly fuel pressure or boost-related. To extend identification further: capture a 30-second held-cruise segment at constant 60 km/h with intermittent throttle/regen pulses, and apply the same constant-speed variance test to other multi-byte PIDs that look speed-correlated."
+    }
+  ]
+}

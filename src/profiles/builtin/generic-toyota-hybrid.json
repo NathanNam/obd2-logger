@@ -1,0 +1,27 @@
+{
+  "profile_id": "generic-toyota-hybrid",
+  "profile_version": "0.1.0",
+  "display_name": "Generic Toyota Hybrid (best-effort)",
+  "description": "Best-effort coverage for Toyota Hybrid Synergy Drive vehicles (Prius gen 3+, Camry hybrid, RAV4 hybrid, Highlander hybrid, etc.). Adds HV battery SOC, voltage, current, temperatures, and motor-generator RPM on top of the standard PIDs. Vehicle-specific PIDs may not respond on every model — unresponsive PIDs are demoted at probe time.",
+  "vehicle_match": {
+    "make": "Toyota",
+    "year_min": 2010
+  },
+  "ecus": {
+    "engine":             { "request_header": "7E0", "response_header": "7E8" },
+    "hybrid_controller":  { "request_header": "7E2", "response_header": "7EA" },
+    "battery_controller": { "request_header": "7E3", "response_header": "7EB" }
+  },
+  "pids": [
+    { "id": "hv_soc_real",      "display_name": "HV SOC (real)",       "ecu": "hybrid_controller",  "mode": "21", "pid": "CE", "unit": "%",   "formula": "A/2",                "category": "hybrid",  "min": 0, "max": 100 },
+    { "id": "hv_soc_display",   "display_name": "HV SOC (display)",    "ecu": "hybrid_controller",  "mode": "21", "pid": "CF", "unit": "%",   "formula": "A/2",                "category": "hybrid",  "min": 0, "max": 100 },
+    { "id": "mg1_rpm",          "display_name": "MG1 RPM",             "ecu": "hybrid_controller",  "mode": "21", "pid": "8B", "unit": "rpm", "formula": "(A*256+B)-32768",    "category": "hybrid" },
+    { "id": "mg2_rpm",          "display_name": "MG2 RPM",             "ecu": "hybrid_controller",  "mode": "21", "pid": "8C", "unit": "rpm", "formula": "(A*256+B)-32768",    "category": "hybrid" },
+    { "id": "hv_voltage",       "display_name": "HV battery voltage",  "ecu": "battery_controller", "mode": "21", "pid": "01", "unit": "V",   "formula": "(A*256+B)/2",        "category": "battery" },
+    { "id": "hv_current",       "display_name": "HV battery current",  "ecu": "battery_controller", "mode": "21", "pid": "02", "unit": "A",   "formula": "(A*256+B)/100-327.68","category": "battery" },
+    { "id": "hv_battery_temp",  "display_name": "HV battery temp",     "ecu": "battery_controller", "mode": "21", "pid": "04", "unit": "°C",  "formula": "A-40",               "category": "battery" }
+  ],
+  "sources": [
+    "https://priuschat.com/threads/torque-pids-for-prius.85997/"
+  ]
+}
