@@ -1,0 +1,194 @@
+import Foundation
+import Observation
+
+/// Top-level orchestration for a logging session: probe, open CSV, drive the
+/// sampler, finalize a sessions.jsonl entry on stop.
+@MainActor
+@Observable
+final class LoggingSession {
+
+    enum State: Equatable {
+        case idle
+        case preparing(step: String)
+        case logging(rowCount: Int, sessionID: String)
+        case error(String)
+    }
+
+    private(set) var state: State = .idle
+    private(set) var liveValues: [String: Sampler.LiveValue] = [:]
+    private(set) var enabledPIDs: [PidDef] = []
+
+    private var elm: ELM327?
+    private var sampler: Sampler?
+    private var writer: CSVWriter?
+    private var vehicle: Vehicle?
+    private var profile: Profile?
+    private var sessionID: String = ""
+    private var sessionStartMs: Int = 0
+    private var sessionStartISO: String = ""
+    private var sampleRateHz: Double = 1.0
+    private var rawMode: Bool = false
+
+    static let shared = LoggingSession()
+
+    /// Start a new logging session. Probes profile PIDs against the live ECU
+    /// (cached in the vehicle if already probed), opens a CSV file, and starts
+    /// the sampler.
+    func start(
+        vehicle: Vehicle,
+        profile: Profile,
+        elm: ELM327,
+        sampleRateHz: Double,
+        rawMode: Bool
+    ) async {
+        guard state == .idle else { return }
+        self.elm = elm
+        self.profile = profile
+        self.vehicle = vehicle
+        self.sampleRateHz = sampleRateHz
+        self.rawMode = rawMode
+
+        do {
+            // 1. Probe (or trust cache).
+            var supported = vehicle.supportedProfilePIDs
+            if rawMode {
+                state = .preparing(step: "Raw mode — querying every profile PID.")
+                supported = profile.pids.map { $0.id }
+            } else if supported.isEmpty {
+                state = .preparing(step: "Probing profile PIDs…")
+                supported = try await ProfileProbe.probe(elm: elm, profile: profile)
+            }
+            enabledPIDs = profile.pids.filter { supported.contains($0.id) }
+
+            // 2. Persist updated supported set on the vehicle (skip in raw mode).
+            if !rawMode {
+                var updated = vehicle
+                updated.supportedProfilePIDs = supported
+                updated.profileVersion = profile.profileVersion
+                updated.lastUsedUTC = ISO8601DateFormatter.utcMs.string(from: Date())
+                try VehicleStore.shared.save(updated)
+                self.vehicle = updated
+            }
+
+            // 3. Open CSV.
+            state = .preparing(step: "Opening CSV…")
+            sessionID = SessionID.generate()
+            sessionStartMs = Int(Date().timeIntervalSince1970 * 1000)
+            sessionStartISO = ISO8601DateFormatter.utcMs.string(from: Date())
+            let filename = (rawMode ? "raw__" : "") + SessionID.sessionFilename(
+                startISO: sessionStartISO,
+                sessionID: sessionID
+            )
+            try AppStorage.shared.ensureDir(AppPath.sessionsDir(vehicle.owner, vehicle.slug))
+            let path = "\(AppPath.sessionsDir(vehicle.owner, vehicle.slug))/\(filename)"
+            writer = try CSVWriter.create(
+                path: path,
+                columnIDs: enabledPIDs.map { $0.id },
+                metadata: [
+                    "session_id": sessionID,
+                    "vehicle_slug": vehicle.slug,
+                    "profile_id": vehicle.profileId,
+                ]
+            )
+
+            // 4. Start sampler.
+            let sampler = Sampler(
+                elm: elm,
+                pids: enabledPIDs,
+                sampleRateHz: sampleRateHz,
+                sessionStartMs: sessionStartMs
+            )
+            sampler.onValue = { [weak self] live in
+                self?.liveValues[live.pidID] = live
+            }
+            sampler.onTick = { [weak self] row in
+                guard let self else { return }
+                do {
+                    try self.writer?.writeRow(
+                        timestampISO: row.timestampISO,
+                        elapsedMs: row.elapsedMs,
+                        values: row.values
+                    )
+                    let count = self.writer?.rowCount ?? 0
+                    self.state = .logging(rowCount: count, sessionID: self.sessionID)
+                } catch {
+                    // Don't crash the sampler on a transient write failure.
+                }
+            }
+            sampler.start()
+            self.sampler = sampler
+
+            // Keep the app running while in background by activating a
+            // silent audio session. See SilentAudioSession.swift for the
+            // App Store review implications.
+            SilentAudioSession.shared.start()
+
+            state = .logging(rowCount: 0, sessionID: sessionID)
+        } catch {
+            state = .error((error as? LocalizedError)?.errorDescription ?? error.localizedDescription)
+            await cleanup(reason: "error")
+        }
+    }
+
+    /// Stop the running session, close the CSV, append a sessions.jsonl entry.
+    func stop(reason: String = "user_stop") async {
+        guard case .logging = state else {
+            await cleanup(reason: reason)
+            return
+        }
+        await cleanup(reason: reason)
+    }
+
+    private func cleanup(reason: String) async {
+        sampler?.stop()
+        SilentAudioSession.shared.stop()
+        let writerSnapshot = writer
+        try? writerSnapshot?.close()
+
+        if let vehicle, let profile, let writer = writerSnapshot {
+            let endMs = Int(Date().timeIntervalSince1970 * 1000)
+            let endISO = ISO8601DateFormatter.utcMs.string(from: Date())
+            let filename = (rawMode ? "raw__" : "") + SessionID.sessionFilename(
+                startISO: sessionStartISO,
+                sessionID: sessionID
+            )
+            let record = SessionRecord(
+                sessionID: sessionID,
+                startUTC: sessionStartISO,
+                endUTC: endISO,
+                durationMs: endMs - sessionStartMs,
+                sampleRateHz: sampleRateHz,
+                rowCount: writer.rowCount,
+                profileID: profile.profileId,
+                profileVersion: profile.profileVersion,
+                pidCount: enabledPIDs.count,
+                file: "sessions/\(filename)",
+                endedReason: reason,
+                meanPidCompletionPct: 100.0,  // TODO: track per-PID completion in Sampler
+                rawMode: rawMode
+            )
+            do {
+                let line = try JSONEncoder().encode(record)
+                if let json = String(data: line, encoding: .utf8) {
+                    try AppStorage.shared.appendText(
+                        json + "\n",
+                        to: AppPath.sessionsManifest(vehicle.owner, vehicle.slug)
+                    )
+                }
+            } catch {
+                // Manifest append failure shouldn't abort the cleanup.
+            }
+        }
+
+        sampler = nil
+        writer = nil
+        elm = nil
+        profile = nil
+        liveValues.removeAll()
+        if case .error = state {
+            // keep error state so UI can show it
+        } else {
+            state = .idle
+        }
+    }
+}

@@ -22,6 +22,12 @@ targets:
       - path: OBD2Logger
         excludes:
           - "Info.plist"
+      # Bundle the JSON profile files from the web source so both apps share
+      # one source of truth. xcodegen adds them to the resources phase.
+      - path: ../src/profiles/builtin
+        name: Profiles
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nathannam.obd2logger

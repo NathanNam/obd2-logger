@@ -1,56 +1,138 @@
 # OBD2 Logger — iOS native
 
-Native Swift / SwiftUI iOS app, targeting iOS 17+. Sibling of the web app at the repo root, sharing only the JSON profile files (bundled into both via `src/profiles/builtin/`).
+Native Swift / SwiftUI iOS app, targeting iOS 17+. Sibling of the web app at the repo root, sharing JSON profile files (bundled into both via `src/profiles/builtin/`).
 
 ## Why a separate native app
 
-The web build can't run continuously in the background on iOS — WKWebView's JavaScript runtime is suspended by iOS within seconds of backgrounding, which kills the OBD2 sampler timer. Declaring `bluetooth-central` keeps native Core Bluetooth callbacks alive but not JS. A native sampler in Swift is the proper fix.
+The web build can't run continuously in the background on iOS — WKWebView's JavaScript runtime is suspended within seconds of backgrounding, which kills the OBD2 sampler timer. Going native solves it cleanly: a Swift sampler can keep polling the adapter while the user has Google Maps in the foreground.
 
 ## Build & run
 
 Prereqs: Xcode 15+ on macOS, [`xcodegen`](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
 
-The `OBD2Logger.xcodeproj` is generated from `project.yml`. To regenerate after changing `project.yml`:
-
 ```bash
 cd ios-native
-xcodegen generate
-```
-
-To open and run:
-
-```bash
+xcodegen generate    # only when project.yml changes
 open OBD2Logger.xcodeproj
-# in Xcode: pick a device (iPhone simulator or your physical iPhone), ⌘R
+# Xcode: pick your iPhone, ⌘R
 ```
 
-The project signs against Apple Developer team `794FX757KP` automatically. Bundle ID is `com.nathannam.obd2logger` (matches the App Store Connect record).
+The project signs against Apple Developer team `794FX757KP` automatically. Bundle ID: `com.nathannam.obd2logger`.
 
-## Build phases
+## Build phases (status)
 
-Tracked by PR sequence. Each PR is independently runnable on-device.
-
-- ✅ **Phase 1** — Xcode scaffold, signing, "Hello, OBD2 Logger" SwiftUI shell
-- ⏳ **Phase 2** — `CoreBluetooth` actor + ELM327 line-buffered command queue
-- ⏳ **Phase 3** — JSON profile loader + JavaScriptCore-based formula evaluator
-- ⏳ **Phase 4** — Mode 09 VIN read + Mode 01 supported-PID discovery + profile probe
-- ⏳ **Phase 5** — Tick-driven sampler + CSV writer to `Documents/`
-- ⏳ **Phase 6** — SwiftUI screens (Onboarding, Vehicle, Connection, Logging, Sessions)
-- ⏳ **Phase 7** — Background BLE (`bluetooth-central` + native sampler keeps logging while Maps is in foreground — the actual goal)
-- ⏳ **Phase 8** — TestFlight distribution
+| Phase | Done? | Description |
+|-------|-------|-------------|
+| 1. Scaffold | ✅ | Xcode project, signing, SwiftUI placeholder |
+| 2. BLE + ELM327 | ✅ | `CoreBluetooth` actor, line-buffered command queue, init handshake |
+| 3. Profile loader | ✅ | JSON profile decoding + JavaScriptCore-based formula evaluator |
+| 4. VIN + discovery | ✅ | Mode 09 PID 02 + Mode 01 supported-PID enumeration + profile probe |
+| 5. Sampler + CSV | ✅ | Tick-driven sampler, CSV writer to `Documents/`, `sessions.jsonl` |
+| 6. SwiftUI screens | ✅ | Onboarding, vehicle manager, connection, logging controls, live readout, sessions list |
+| 7. Background BLE | ✅ | `bluetooth-central` + `audio` modes + silent audio session |
+| 8. TestFlight | ✅ (instructions) | See "Distributing via TestFlight" below |
 
 ## Layout
 
 ```
 ios-native/
-├── project.yml                 # xcodegen spec — source of truth for project structure
-├── OBD2Logger.xcodeproj/       # generated; commit, but don't hand-edit
+├── project.yml                         # xcodegen spec (source of truth)
+├── OBD2Logger.xcodeproj/                # generated; commit but don't hand-edit
 └── OBD2Logger/
-    ├── OBD2LoggerApp.swift     # app entry
-    ├── ContentView.swift       # root view
-    ├── Info.plist
-    ├── Assets.xcassets/
-    └── Preview Content/
+    ├── OBD2LoggerApp.swift              # @main entry
+    ├── ContentView.swift                # gates Onboarding vs MainShell
+    ├── Info.plist                       # background modes, BLE permission
+    ├── BLE/
+    │   ├── KnownServices.swift          # OBD2 service UUIDs
+    │   └── BLEManager.swift             # CoreBluetooth + AsyncStream
+    ├── ELM327/
+    │   └── ELM327.swift                 # command queue + line buffer
+    ├── OBD2/
+    │   ├── HexParsing.swift
+    │   ├── VINReader.swift              # Mode 09 PID 02
+    │   ├── StandardPIDDiscovery.swift   # Mode 01 supported-PID bitmaps
+    │   ├── ProfileProbe.swift           # per-PID liveness probe
+    │   ├── Sampler.swift                # tick-driven query loop
+    │   └── LoggingSession.swift         # orchestrates probe → CSV → sessions.jsonl
+    ├── Profiles/
+    │   ├── Profile.swift                # Codable types
+    │   ├── ProfileRegistry.swift        # bundle-loaded JSON profiles
+    │   └── FormulaEvaluator.swift       # JavaScriptCore wrapper
+    ├── Storage/
+    │   ├── AppStorage.swift             # FileManager helpers, path helpers
+    │   ├── SettingsStore.swift          # owner / sample rate / etc.
+    │   ├── Vehicle.swift
+    │   ├── VehicleStore.swift           # per-owner vehicle.json CRUD
+    │   ├── SessionRecord.swift
+    │   └── CSVWriter.swift              # streaming CSV append
+    ├── Background/
+    │   └── SilentAudioSession.swift     # iOS background-mode trick
+    └── Views/
+        ├── OnboardingView.swift
+        ├── MainShellView.swift
+        ├── ConnectionView.swift
+        ├── DevicePickerView.swift
+        ├── VehicleManagerView.swift
+        ├── AddVehicleView.swift
+        ├── LoggingControlsView.swift
+        ├── LiveReadoutView.swift
+        └── SessionsListView.swift
 ```
 
-Source files live under `OBD2Logger/`. New Swift files added there are picked up automatically on the next `xcodegen generate` (no manual project edits needed).
+## How background BLE works (Phase 7)
+
+1. **`bluetooth-central` background mode** — declared in Info.plist. Lets `CoreBluetooth` delegate callbacks fire while the app is backgrounded (incoming notifications, disconnects).
+
+2. **`audio` background mode + silent audio loop** — declared in Info.plist; activated on session start by `SilentAudioSession.swift`. iOS keeps the **entire app** running as long as audio plays, including our sampler timer that actively *sends* OBD2 query commands every tick (something `bluetooth-central` alone doesn't enable, since it only keeps inbound delegate callbacks alive).
+
+The silent audio is generated by `AVAudioEngine` looping a zero-filled buffer — no asset file required.
+
+**App Store implications**: the `audio` mode trick is well-known and many vehicle/sport apps use it. Apple's review may ask why the app needs `audio`; the legitimate answer is "we keep the data-logging session alive while the user navigates with Maps." For TestFlight (not full App Review), this is fine. For App Store distribution, expect a reviewer question — be prepared to justify or pivot to a properly-architected location-mode solution.
+
+## Distributing via TestFlight (Phase 8)
+
+Already done up front: paid Apple Developer account ($99/yr, enrolled), App Store Connect record (App: "OBD2 Logger", Bundle ID: `com.nathannam.obd2logger`, SKU: whatever you chose).
+
+### One-time per major version
+
+1. **Bump version**: in `Info.plist`, increment `CFBundleShortVersionString` (e.g. `0.1.0` → `0.2.0`) and `CFBundleVersion` (e.g. `1` → `2`).
+2. **Archive build**: in Xcode, top-toolbar device dropdown → pick **Any iOS Device (arm64)**. Then **Product → Archive**. Takes ~1–3 minutes.
+3. **Distribute**: when the Organizer window opens, select the archive → **Distribute App** → **App Store Connect** → **Upload**. Xcode validates the binary, signs it for distribution, and uploads to App Store Connect. Takes 5–15 minutes.
+4. **Wait for processing**: in App Store Connect → your app → TestFlight tab, the build appears under "iOS Builds" with status "Processing" for ~10–30 minutes.
+5. **Set up External Testing** (first time only):
+   - In App Store Connect → TestFlight → External Testing → **+** → create a group ("Friends" or similar)
+   - Add testers by email, *or* enable a **public link** for QR-code distribution
+   - Submit the build for **Beta App Review** — Apple's quick review for TestFlight (typically <24h)
+6. **After approval**: your public link goes live. Friends scan the QR code, install the **TestFlight** app from the App Store, and install your build through it.
+
+### After every change
+
+If you've already shipped a v1 build via TestFlight, subsequent changes work like this:
+- Bump `CFBundleVersion` in Info.plist (build numbers must always increase).
+- **Product → Archive** → **Distribute App** → **Upload**.
+- New build appears in TestFlight automatically. If you stay within the same major version (e.g. 0.1.0 → 0.1.1), it skips Beta App Review.
+
+### Build expiration
+
+TestFlight builds expire 90 days after upload. Re-archive and upload before that to keep your testers running.
+
+## Known limitations / TODO
+
+- **VIN auto-decode (NHTSA)**: not yet wired. Add Vehicle form has a manual VIN field for now.
+- **Mean PID completion %**: hardcoded to 100% in SessionRecord; should track actual per-PID success rate.
+- **Owner rename**: not implemented. To change owner, edit Settings (TODO: add a settings view) or delete UserDefaults via Settings → OBD2 Logger.
+- **Profile editing / import**: no UI yet; profiles must be edited at the `src/profiles/builtin/` source and rebuilt.
+- **iOS 26+ tested only**: Nathan's iPhone runs iOS 26.4.1; Phases 2-7 verified to compile against the iOS 17.0 SDK floor but not yet runtime-tested on iOS 17.x. Should work but file an issue if anything misbehaves on older iPhones.
+
+## Verifying after a fresh clone
+
+```bash
+cd ios-native
+xcodegen generate   # ensure project is up-to-date with project.yml
+xcodebuild -project OBD2Logger.xcodeproj -scheme OBD2Logger \
+  -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+  -configuration Debug build \
+  CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+```
+
+Expected: `** BUILD SUCCEEDED **` (with some Swift Concurrency 6 warnings that are non-fatal).
