@@ -1,0 +1,20 @@
+# Xcode user-specific files
+**/xcuserdata/
+**/*.xcuserstate
+
+# Build outputs
+build/
+DerivedData/
+*.ipa
+*.xcarchive
+
+# CocoaPods (we use SPM, but ignore just in case)
+Pods/
+Podfile.lock
+
+# Swift Package Manager local state
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
