@@ -115,20 +115,19 @@ final class ELM327 {
     /// Run the standard ELM327 init sequence. Returns the firmware banner
     /// string from `ATZ` (handy for debugging).
     func initSequence() async throws -> String {
+        NSLog("[OBD2-ELM] initSequence: start")
         recordLog(.info, "Init sequence starting…")
-        // ATZ: warm reset; banner contains "ELM327 v..."
-        // 6s timeout — some clones take a couple seconds to cold-boot the
-        // chip after a fresh BLE connection.
         let banner = try await send("ATZ", timeout: 6.0)
-        // ATE0 turns echo off, which changes the response shape. Some
-        // adapters need a longer settle time after this specific command —
-        // 500ms is generous but avoids races on slow clones.
-        try await expectOK("ATE0", postDelayMs: 500)  // turn off echo
-        try await expectOK("ATL0", postDelayMs: 100)  // line feeds off
-        try await expectOK("ATS0", postDelayMs: 100)  // spaces off
-        try await expectOK("ATH0", postDelayMs: 100)  // headers off
-        try await expectOK("ATSP0", postDelayMs: 100) // auto-detect protocol
-        try await expectOK("ATCAF1")                  // CAN automatic formatting
+        // 100ms inter-command delay. Was 500ms post-ATE0 in PR #18 as
+        // defensive padding; reverting now that we have proper notify
+        // confirmation + flow control.
+        try await expectOK("ATE0", postDelayMs: 100)
+        try await expectOK("ATL0", postDelayMs: 100)
+        try await expectOK("ATS0", postDelayMs: 100)
+        try await expectOK("ATH0", postDelayMs: 100)
+        try await expectOK("ATSP0", postDelayMs: 100)
+        try await expectOK("ATCAF1")
+        NSLog("[OBD2-ELM] initSequence: done")
         recordLog(.info, "Init sequence OK.")
         return banner.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -161,13 +160,18 @@ final class ELM327 {
     }
 
     private func expectOK(_ command: String, postDelayMs: Int = 0) async throws {
+        NSLog("[OBD2-ELM] expectOK(\(command)): sending")
         let response = try await send(command)
+        NSLog("[OBD2-ELM] expectOK(\(command)): got response \"\(response.replacingOccurrences(of: "\n", with: "\\n"))\"")
         let normalized = response.uppercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized.contains("OK") else {
+            NSLog("[OBD2-ELM] expectOK(\(command)): FAIL — \"OK\" not in response")
             throw ELMError.unexpectedResponse(command: command, response: response)
         }
         if postDelayMs > 0 {
+            NSLog("[OBD2-ELM] expectOK(\(command)): sleeping \(postDelayMs)ms")
             try await Task.sleep(nanoseconds: UInt64(postDelayMs) * 1_000_000)
+            NSLog("[OBD2-ELM] expectOK(\(command)): sleep done")
         }
     }
 
