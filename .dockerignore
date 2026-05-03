@@ -5,6 +5,4 @@ dist
 .idea
 *.log
 .DS_Store
-ios
-android
-capacitor.config.ts
+ios-native

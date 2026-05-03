@@ -1,39 +1,31 @@
-import type { Storage } from "../lib/storage";
 import { getBuiltinProfiles, setImportedProfiles } from "./registry";
 import { profileToJson, validateProfile } from "./io";
 import type { Profile } from "./types";
 
-const PROFILES_DIR = "profiles";
+async function ensureProfilesDir(
+  root: FileSystemDirectoryHandle,
+): Promise<FileSystemDirectoryHandle> {
+  return root.getDirectoryHandle("profiles", { create: true });
+}
 
 export async function syncProfilesToDisk(
-  storage: Storage,
+  root: FileSystemDirectoryHandle,
 ): Promise<{ imported: Profile[] }> {
-  await storage.ensureDir(PROFILES_DIR);
+  const profilesDir = await ensureProfilesDir(root);
   const builtinIds = new Set(getBuiltinProfiles().map((p) => p.profile_id));
 
   for (const p of getBuiltinProfiles()) {
-    await writeProfile(storage, p);
+    await writeProfile(profilesDir, p);
   }
 
   const imported: Profile[] = [];
-  let entries: Awaited<ReturnType<Storage["listDir"]>>;
-  try {
-    entries = await storage.listDir(PROFILES_DIR);
-  } catch {
-    entries = [];
-  }
-  for (const entry of entries) {
+  for await (const entry of profilesDir.values()) {
     if (entry.kind !== "file") continue;
     if (!entry.name.endsWith(".json")) continue;
-    let raw: string;
-    try {
-      raw = await storage.readText(`${PROFILES_DIR}/${entry.name}`);
-    } catch {
-      continue;
-    }
+    const f = await (entry as FileSystemFileHandle).getFile();
     let data: unknown;
     try {
-      data = JSON.parse(raw);
+      data = JSON.parse(await f.text());
     } catch {
       continue;
     }
@@ -48,18 +40,18 @@ export async function syncProfilesToDisk(
 }
 
 export async function writeProfile(
-  storage: Storage,
+  profilesDir: FileSystemDirectoryHandle,
   profile: Profile,
 ): Promise<void> {
-  await storage.ensureDir(PROFILES_DIR);
-  await storage.writeText(
-    `${PROFILES_DIR}/${profile.profile_id}.json`,
-    profileToJson(profile),
-  );
+  const filename = profile.profile_id + ".json";
+  const handle = await profilesDir.getFileHandle(filename, { create: true });
+  const writable = await handle.createWritable();
+  await writable.write(profileToJson(profile));
+  await writable.close();
 }
 
 export async function importProfileFromFile(
-  storage: Storage,
+  root: FileSystemDirectoryHandle,
   file: File,
 ): Promise<Profile> {
   let data: unknown;
@@ -72,8 +64,9 @@ export async function importProfileFromFile(
   if (!v.ok) {
     throw new Error("Profile validation failed:\n" + v.errors.map((e) => " · " + e).join("\n"));
   }
-  await writeProfile(storage, v.profile);
-  await syncProfilesToDisk(storage);
+  const profilesDir = await ensureProfilesDir(root);
+  await writeProfile(profilesDir, v.profile);
+  await syncProfilesToDisk(root);
   return v.profile;
 }
 

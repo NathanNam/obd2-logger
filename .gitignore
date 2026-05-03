@@ -16,12 +16,11 @@ dist-ssr
 /data
 /profiles
 
-# Capacitor iOS build artifacts (the ios/ Xcode project itself is committed,
-# but it ships its own .gitignore for build outputs / Pods)
-ios/App/Pods
-ios/App/build
-ios/DerivedData
-ios/.bundle
+# Native iOS app build artifacts (the ios-native/ Xcode project files
+# are committed, but Xcode's local build outputs / user data are not)
+ios-native/build
+ios-native/DerivedData
+ios-native/**/xcuserdata
 
 # Editor directories and files
 .vscode/*

@@ -1,34 +1,35 @@
 import { useState } from "react";
 import { patchSettings } from "../lib/db";
-import { ensurePermission, pickRootDirectory } from "../lib/fs";
+import {
+  ensureOwnerDir,
+  ensurePermission,
+  pickRootDirectory,
+} from "../lib/fs";
 import { normalizeOwner, ownerError, suggestDefaultOwner } from "../lib/owner";
-import { isNative } from "../lib/platform";
-import { storageFromHandle, type Storage } from "../lib/storage";
 import type { Settings } from "../types";
 
 type Props = {
   initialSettings: Settings;
-  initialStorage: Storage | null;
+  initialRoot: FileSystemDirectoryHandle | null;
   permissionGranted: boolean;
-  onComplete: (settings: Settings, storage: Storage) => void;
+  onComplete: (settings: Settings, root: FileSystemDirectoryHandle) => void;
 };
 
 type Step = "folder" | "owner";
 
 export function Onboarding({
   initialSettings,
-  initialStorage,
+  initialRoot,
   permissionGranted,
   onComplete,
 }: Props) {
-  const native = isNative();
-
-  // On native, there's no folder picker step — go straight to owner.
-  // On web, follow the existing two-step flow.
+  // If we have a stored handle but permission isn't currently granted, send
+  // the user to step 1 — that's where the "Re-grant access" button lives, and
+  // any subsequent disk operation will need permission first.
   const [step, setStep] = useState<Step>(
-    native || (initialStorage && permissionGranted) ? "owner" : "folder",
+    initialRoot && permissionGranted ? "owner" : "folder",
   );
-  const [storage, setStorage] = useState<Storage | null>(initialStorage);
+  const [root, setRoot] = useState<FileSystemDirectoryHandle | null>(initialRoot);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +43,7 @@ export function Onboarding({
     try {
       const handle = await pickRootDirectory();
       await patchSettings({ rootDirHandleSet: true });
-      setStorage(storageFromHandle(handle));
+      setRoot(handle);
       setStep("owner");
     } catch (e) {
       const aborted = e instanceof DOMException && e.name === "AbortError";
@@ -55,12 +56,11 @@ export function Onboarding({
   }
 
   async function handleReprompt() {
-    if (!storage) return;
+    if (!root) return;
     setError(null);
     setBusy(true);
     try {
-      const handle = storage._legacyWebRoot();
-      const state = await ensurePermission(handle);
+      const state = await ensurePermission(root);
       if (state !== "granted") {
         setError("Permission was not granted. Click again to retry.");
         return;
@@ -74,7 +74,7 @@ export function Onboarding({
   }
 
   async function handleConfirmOwner() {
-    if (!storage) return;
+    if (!root) return;
     const owner = normalizeOwner(ownerInput);
     const err = ownerError(owner);
     if (err) {
@@ -84,20 +84,18 @@ export function Onboarding({
     setError(null);
     setBusy(true);
     try {
-      if (!native) {
-        // Web: re-request permission inside the user-activation gesture.
-        const handle = storage._legacyWebRoot();
-        const granted = await ensurePermission(handle);
-        if (granted !== "granted") {
-          setError(
-            "Folder permission was not granted. Click Back, then 'Re-grant access' on Step 1.",
-          );
-          return;
-        }
+      // The click that triggered this handler is a fresh user activation, so
+      // this is a safe place to (re-)request permission if it lapsed.
+      const granted = await ensurePermission(root);
+      if (granted !== "granted") {
+        setError(
+          "Folder permission was not granted. Click Back, then 'Re-grant access' on Step 1.",
+        );
+        return;
       }
-      await storage.ensureDir(`data/${owner}`);
+      await ensureOwnerDir(root, owner);
       const next = await patchSettings({ owner, rootDirHandleSet: true });
-      onComplete(next, storage);
+      onComplete(next, root);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create the owner folder.");
     } finally {
@@ -122,7 +120,7 @@ export function Onboarding({
             inside it.
           </p>
           {error && <div className="callout err">{error}</div>}
-          {storage ? (
+          {root ? (
             <div className="row">
               <button className="primary" onClick={handleReprompt} disabled={busy}>
                 {busy ? "Requesting…" : "Re-grant access"}
@@ -144,14 +142,8 @@ export function Onboarding({
   return (
     <div className="center-stage">
       <div className="card">
-        <div className="step">{native ? "Setup" : "Step 2 of 2"}</div>
+        <div className="step">Step 2 of 2</div>
         <h1>What should we call you?</h1>
-        {native && (
-          <p>
-            Your data lives inside the OBD2 Logger app folder, accessible from the
-            iOS Files app under <strong>On My iPhone → OBD2 Logger</strong>.
-          </p>
-        )}
         <p>
           Used to label your data folder so it's easy to share with friends later.
           Lowercase letters, digits, and dashes — like a folder name.
@@ -178,11 +170,9 @@ export function Onboarding({
         </div>
         {error && <div className="callout err">{error}</div>}
         <div className="row">
-          {!native && (
-            <button onClick={() => setStep("folder")} disabled={busy}>
-              Back
-            </button>
-          )}
+          <button onClick={() => setStep("folder")} disabled={busy}>
+            Back
+          </button>
           <div className="spacer" />
           <button className="primary" onClick={handleConfirmOwner} disabled={busy}>
             {busy ? "Saving…" : "Continue"}

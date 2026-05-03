@@ -1,4 +1,4 @@
-import type { Storage } from "../lib/storage";
+import { ensureOwnerDir } from "../lib/fs";
 import { ensureSessionsDir } from "../lib/vehicles";
 import { connection } from "./connection";
 import { hexToBytes } from "./discover";
@@ -266,7 +266,7 @@ export type SweepRunResult = {
 };
 
 export async function runSweepForActiveVehicle(opts: {
-  storage: Storage;
+  rootDir: FileSystemDirectoryHandle;
   owner: string;
   vehicleSlug: string;
   profileId: string;
@@ -305,15 +305,12 @@ export async function runSweepForActiveVehicle(opts: {
   const filename = `sweep__${startedUtc.replace(/:/g, "-").replace(/\.\d{3}Z$/, "Z")}.json`;
   let saveError: string | null = null;
   try {
-    const sessionsPath = await ensureSessionsDir(
-      opts.storage,
-      opts.owner,
-      opts.vehicleSlug,
-    );
-    await opts.storage.writeText(
-      `${sessionsPath}/${filename}`,
-      JSON.stringify(report, null, 2),
-    );
+    const ownerDir = await ensureOwnerDir(opts.rootDir, opts.owner);
+    const sessionsDir = await ensureSessionsDir(ownerDir, opts.vehicleSlug);
+    const handle = await sessionsDir.getFileHandle(filename, { create: true });
+    const writable = await handle.createWritable();
+    await writable.write(JSON.stringify(report, null, 2));
+    await writable.close();
   } catch (e) {
     saveError = e instanceof Error ? e.message : String(e);
   }

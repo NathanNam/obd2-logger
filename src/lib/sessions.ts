@@ -1,5 +1,3 @@
-import type { Storage } from "./storage";
-
 export type SessionRecord = {
   session_id: string;
   start_utc: string;
@@ -33,19 +31,27 @@ export function sessionFilename(startIso: string, sessionId: string): string {
 }
 
 export async function appendSessionRecord(
-  storage: Storage,
-  jsonlPath: string,
+  vehicleDir: FileSystemDirectoryHandle,
   record: SessionRecord,
 ): Promise<void> {
-  await storage.appendText(jsonlPath, JSON.stringify(record) + "\n");
+  const file = await vehicleDir.getFileHandle("sessions.jsonl", { create: true });
+  const existing = await readAllText(file);
+  const stream = await file.createWritable();
+  const newline = existing && !existing.endsWith("\n") ? "\n" : "";
+  await stream.write(existing + newline + JSON.stringify(record) + "\n");
+  await stream.close();
 }
 
 export async function readSessionsJsonl(
-  storage: Storage,
-  jsonlPath: string,
+  vehicleDir: FileSystemDirectoryHandle,
 ): Promise<SessionRecord[]> {
-  if (!(await storage.exists(jsonlPath))) return [];
-  const text = await storage.readText(jsonlPath);
+  let file: FileSystemFileHandle;
+  try {
+    file = await vehicleDir.getFileHandle("sessions.jsonl", { create: false });
+  } catch {
+    return [];
+  }
+  const text = await readAllText(file);
   const out: SessionRecord[] = [];
   for (const raw of text.split("\n")) {
     const line = raw.trim();
@@ -57,4 +63,14 @@ export async function readSessionsJsonl(
     }
   }
   return out;
+}
+
+async function readAllText(file: FileSystemFileHandle): Promise<string> {
+  try {
+    const f = await file.getFile();
+    if (f.size === 0) return "";
+    return await f.text();
+  } catch {
+    return "";
+  }
 }

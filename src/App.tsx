@@ -4,14 +4,12 @@ import { MainShell } from "./components/MainShell";
 import { Onboarding } from "./components/Onboarding";
 import { evaluateBrowser, type FeatureSupport } from "./lib/browser-support";
 import { loadSettings, patchSettings } from "./lib/db";
-import { ensurePermission, forgetRoot, loadStoredRoot } from "./lib/fs";
-import { isNative } from "./lib/platform";
 import {
-  nativeStorage,
-  shouldAutoInitStorage,
-  type Storage,
-  storageFromHandle,
-} from "./lib/storage";
+  ensurePermission,
+  forgetRoot,
+  loadStoredRoot,
+  scaffoldRootChildren,
+} from "./lib/fs";
 import { syncProfilesToDisk } from "./profiles/disk";
 import { DEFAULT_SETTINGS, type Settings } from "./types";
 
@@ -21,10 +19,10 @@ type AppState =
   | {
       kind: "onboarding";
       settings: Settings;
-      storage: Storage | null;
+      root: FileSystemDirectoryHandle | null;
       permissionGranted: boolean;
     }
-  | { kind: "ready"; settings: Settings; storage: Storage };
+  | { kind: "ready"; settings: Settings; root: FileSystemDirectoryHandle };
 
 export default function App() {
   const [state, setState] = useState<AppState>({ kind: "loading" });
@@ -37,46 +35,23 @@ export default function App() {
     }
 
     const settings = await loadSettings();
-
-    // Native shells (Capacitor): no folder picker. Storage is always the
-    // app's Documents directory; we just need an owner to be set.
-    if (shouldAutoInitStorage()) {
-      const storage = nativeStorage();
-      await scaffoldRootChildren(storage);
-      await syncProfilesToDisk(storage);
-      if (!settings.owner) {
-        setState({
-          kind: "onboarding",
-          settings,
-          storage,
-          permissionGranted: true,
-        });
-        return;
-      }
-      setState({ kind: "ready", settings, storage });
-      return;
-    }
-
-    // Web: walk through the folder-picker / permission flow.
     const stored = await loadStoredRoot();
 
     if (!stored) {
       setState({
         kind: "onboarding",
         settings,
-        storage: null,
+        root: null,
         permissionGranted: false,
       });
       return;
     }
 
-    const storage = storageFromHandle(stored.handle);
-
     if (stored.permission !== "granted") {
       setState({
         kind: "onboarding",
         settings,
-        storage,
+        root: stored.handle,
         permissionGranted: false,
       });
       return;
@@ -86,15 +61,15 @@ export default function App() {
       setState({
         kind: "onboarding",
         settings,
-        storage,
+        root: stored.handle,
         permissionGranted: true,
       });
       return;
     }
 
-    await scaffoldRootChildren(storage);
-    await syncProfilesToDisk(storage);
-    setState({ kind: "ready", settings, storage });
+    await scaffoldRootChildren(stored.handle);
+    await syncProfilesToDisk(stored.handle);
+    setState({ kind: "ready", settings, root: stored.handle });
   }, []);
 
   useEffect(() => {
@@ -105,9 +80,7 @@ export default function App() {
     if (!confirm("Forget the folder and reset settings? Files on disk are untouched.")) {
       return;
     }
-    if (!isNative()) {
-      await forgetRoot();
-    }
+    await forgetRoot();
     await patchSettings({ ...DEFAULT_SETTINGS });
     setState({ kind: "loading" });
     void bootstrap();
@@ -136,17 +109,14 @@ export default function App() {
       <div className="app">
         <Onboarding
           initialSettings={state.settings}
-          initialStorage={state.storage}
+          initialRoot={state.root}
           permissionGranted={state.permissionGranted}
-          onComplete={async (settings, storage) => {
-            if (!isNative()) {
-              const handle = storage._legacyWebRoot();
-              const granted = await ensurePermission(handle);
-              if (granted !== "granted") return;
-            }
-            await scaffoldRootChildren(storage);
-            await syncProfilesToDisk(storage);
-            setState({ kind: "ready", settings, storage });
+          onComplete={async (settings, root) => {
+            const granted = await ensurePermission(root);
+            if (granted !== "granted") return;
+            await scaffoldRootChildren(root);
+            await syncProfilesToDisk(root);
+            setState({ kind: "ready", settings, root });
           }}
         />
       </div>
@@ -157,17 +127,13 @@ export default function App() {
     <div className="app">
       <MainShell
         settings={state.settings}
-        storage={state.storage}
+        rootDir={state.root}
+        rootName={state.root.name}
         onResetData={handleResetData}
         onSettingsChange={(next) =>
-          setState({ kind: "ready", settings: next, storage: state.storage })
+          setState({ kind: "ready", settings: next, root: state.root })
         }
       />
     </div>
   );
-}
-
-async function scaffoldRootChildren(storage: Storage): Promise<void> {
-  await storage.ensureDir("data");
-  await storage.ensureDir("profiles");
 }
