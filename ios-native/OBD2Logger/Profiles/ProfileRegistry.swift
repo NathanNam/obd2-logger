@@ -53,10 +53,11 @@ final class ProfileRegistry {
         loadError = nil
         var loaded: [Profile] = []
 
-        // The xcodegen `path: ../src/profiles/builtin` source builds to a
-        // `Profiles` folder reference inside the app bundle. Resolve it.
+        // xcodegen ignores `name:` for folder-reference resources — it
+        // copies the source folder verbatim, so the bundle path is the
+        // last component of `path: ../src/profiles/builtin` → `builtin`.
         guard let profilesDir = Bundle.main.url(
-            forResource: "Profiles",
+            forResource: "builtin",
             withExtension: nil
         ) else {
             loadError = "Profiles directory missing from app bundle. Run xcodegen."
