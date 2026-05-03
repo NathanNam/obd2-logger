@@ -6,6 +6,13 @@ export type TransportEvent =
 
 export type TransportListener = (e: TransportEvent) => void;
 
+export type PickedDescription = {
+  service: string;
+  tx: string;
+  rx: string;
+  source: string;
+};
+
 export interface Transport {
   readonly id: string;
   readonly label: string;
@@ -14,6 +21,8 @@ export interface Transport {
   write(bytes: Uint8Array): Promise<void>;
   on(listener: TransportListener): () => void;
   isOpen(): boolean;
+  /** Optional: BLE-style transports report which GATT service / chars they picked. */
+  describePicked?(): PickedDescription | null;
 }
 
 export function asciiBytes(s: string): Uint8Array {
