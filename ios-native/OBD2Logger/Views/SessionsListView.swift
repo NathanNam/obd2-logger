@@ -22,15 +22,15 @@ struct SessionsListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Sessions").font(.subheadline.weight(.semibold))
+                Text("Sessions").font(.cardTitle)
                 Spacer()
                 Text("\(sessions.count)")
-                    .font(.caption.monospaced())
+                    .font(.monoSmall)
                     .foregroundStyle(.tertiary)
             }
             if sessions.isEmpty {
                 Text("No sessions yet for the active vehicle.")
-                    .font(.callout)
+                    .font(.bodyText)
                     .foregroundStyle(.tertiary)
                     .padding(.vertical, 8)
             } else {
@@ -38,14 +38,14 @@ struct SessionsListView: View {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(record.startUTC.replacingOccurrences(of: ".000Z", with: "Z"))
-                                .font(.caption.monospaced())
+                                .font(.monoSmall)
                             Text("\(record.rowCount) rows · \(formatDuration(ms: record.durationMs))")
-                                .font(.caption2.monospaced())
+                                .font(.monoTiny)
                                 .foregroundStyle(.tertiary)
                         }
                         Spacer()
                         Text(record.endedReason)
-                            .font(.caption2.monospaced())
+                            .font(.monoTiny)
                             .foregroundStyle(.tertiary)
                     }
                     .padding(8)
@@ -76,7 +76,7 @@ struct SessionsListView: View {
             Spacer()
 
             Text("Page \(page + 1) of \(pageCount)")
-                .font(.caption.monospaced())
+                .font(.monoSmall)
                 .foregroundStyle(.tertiary)
 
             Spacer()

@@ -52,7 +52,7 @@ struct OBD2LoggerApp: App {
             }
         }()
         Text(text)
-            .font(.callout)
+            .font(.bodyText)
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)

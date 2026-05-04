@@ -24,7 +24,7 @@ struct VehicleManagerSheet: View {
 
                     if let statusMessage {
                         Text(statusMessage)
-                            .font(.caption)
+                            .font(.captionText)
                             .foregroundStyle(.secondary)
                             .padding(8)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -34,7 +34,7 @@ struct VehicleManagerSheet: View {
 
                     if vehicleStore.vehicles.isEmpty {
                         Text("No vehicles yet. Tap **Add vehicle** to set one up — VIN auto-read + NHTSA decode pre-fill the year, make, and model.")
-                            .font(.callout)
+                            .font(.bodyText)
                             .foregroundStyle(.tertiary)
                             .padding(.vertical, 16)
                     } else {
@@ -113,18 +113,18 @@ struct VehicleManagerSheet: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(vehicle.displayName)
-                        .font(.callout.weight(.semibold))
+                        .font(.valueLabel)
                     Text(vehicle.slug + " · " + vehicle.profileId)
-                        .font(.caption.monospaced())
+                        .font(.monoSmall)
                         .foregroundStyle(.tertiary)
                     Text("\(vehicle.supportedStandardPIDs.count) std · \(vehicle.supportedProfilePIDs.count) profile PIDs cached")
-                        .font(.caption2.monospaced())
+                        .font(.monoTiny)
                         .foregroundStyle(.tertiary)
                 }
                 Spacer()
                 if settings.activeVehicleSlug == vehicle.slug {
                     Text("ACTIVE")
-                        .font(.caption2.monospaced())
+                        .font(.monoTiny)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Color.green.opacity(0.2))
                         .foregroundStyle(.green)

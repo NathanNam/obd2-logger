@@ -14,10 +14,10 @@ struct DevicePickerView: View {
                     VStack(spacing: 12) {
                         ProgressView()
                         Text("Scanning for OBD2 adapters…")
-                            .font(.callout)
+                            .font(.bodyText)
                             .foregroundStyle(.secondary)
                         Text("Hold your phone close to the adapter and key the car to ON.")
-                            .font(.footnote)
+                            .font(.statusText)
                             .foregroundStyle(.tertiary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 24)
@@ -34,12 +34,12 @@ struct DevicePickerView: View {
                                     Text(device.name)
                                         .foregroundStyle(.primary)
                                     Text(device.id.uuidString.prefix(13) + "…")
-                                        .font(.system(.caption, design: .monospaced))
+                                        .font(.monoSmall)
                                         .foregroundStyle(.tertiary)
                                 }
                                 Spacer()
                                 Text("\(device.rssi) dB")
-                                    .font(.caption)
+                                    .font(.captionText)
                                     .foregroundStyle(.secondary)
                                     .monospaced()
                             }

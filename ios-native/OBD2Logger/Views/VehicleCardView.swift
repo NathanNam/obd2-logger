@@ -19,37 +19,37 @@ struct VehicleCardView: View {
             HStack(alignment: .center, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Vehicle")
-                        .font(.caption.monospaced())
+                        .font(.monoSmall)
                         .foregroundStyle(.tertiary)
                         .textCase(.uppercase)
                     if let active = activeVehicle {
                         Text(active.displayName)
-                            .font(.callout.weight(.semibold))
+                            .font(.valueLabel)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                         Text("\(active.slug) · \(active.profileId)")
-                            .font(.caption.monospaced())
+                            .font(.monoSmall)
                             .foregroundStyle(.tertiary)
                             .lineLimit(1)
                     } else if vehicleStore.vehicles.isEmpty {
                         Text("No vehicle yet")
-                            .font(.callout.weight(.semibold))
+                            .font(.valueLabel)
                             .foregroundStyle(.primary)
                         Text("Tap to add your car")
-                            .font(.caption.monospaced())
+                            .font(.monoSmall)
                             .foregroundStyle(.tertiary)
                     } else {
                         Text("Pick an active vehicle")
-                            .font(.callout.weight(.semibold))
+                            .font(.valueLabel)
                             .foregroundStyle(.primary)
                         Text("\(vehicleStore.vehicles.count) saved · tap to choose")
-                            .font(.caption.monospaced())
+                            .font(.monoSmall)
                             .foregroundStyle(.tertiary)
                     }
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(.caption, weight: .semibold))
+                    .font(.captionText.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
             .padding(16)

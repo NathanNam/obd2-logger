@@ -25,6 +25,7 @@
 		689E20DA99AC09C55E151C07 /* SessionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13A7FD01EB1974AFF94D9B7C /* SessionRecord.swift */; };
 		70197F79095F5FDFA041AEC4 /* LoggingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */; };
 		7197636607CE9B7788273A1A /* CSVWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE4000375142418EFA018A9C /* CSVWriter.swift */; };
+		7263CF60FCE9192B8B5C73F8 /* Style.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC535A83F6ACA7EDE0A67E0 /* Style.swift */; };
 		7D85889B9E5901C6200851C3 /* AppStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A3ADD6AC4750BA0B21746E /* AppStorage.swift */; };
 		879262E993A00188C9005745 /* FormulaEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC3F7D95784A3DE1749F16F /* FormulaEvaluator.swift */; };
 		8D356E578CCDE1F1918E8625 /* VINReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71041E5EB030CA9C467F0BCF /* VINReader.swift */; };
@@ -89,6 +90,7 @@
 		E37429C83F1BF8E4440C4AF0 /* Profiles */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Profiles; path = ../src/profiles/builtin; sourceTree = SOURCE_ROOT; };
 		E43D2ADBCDA91AAB27F20049 /* LoggingControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingControlsView.swift; sourceTree = "<group>"; };
 		F13DA538359482EEECD45EF7 /* BLEManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BLEManager.swift; sourceTree = "<group>"; };
+		FBC535A83F6ACA7EDE0A67E0 /* Style.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Style.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -117,6 +119,7 @@
 				172025B3D025651AEA46C425 /* MainShellView.swift */,
 				0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */,
 				B942AACBC4E12924F1201AC0 /* SessionsListView.swift */,
+				FBC535A83F6ACA7EDE0A67E0 /* Style.swift */,
 				0230F8E4A2B3254B8602F038 /* VehicleCardView.swift */,
 				78BB30FEF564D12F7F743FA9 /* VehicleManagerView.swift */,
 			);
@@ -322,6 +325,7 @@
 				FB22B5DEB4C3DC17FEC8D3B4 /* SettingsStore.swift in Sources */,
 				1B1CF3D1EEFC5FE6AD585D35 /* StandardPIDDiscovery.swift in Sources */,
 				100ECA5F27FBA097AA0B3FC6 /* StandardPids.swift in Sources */,
+				7263CF60FCE9192B8B5C73F8 /* Style.swift in Sources */,
 				8D356E578CCDE1F1918E8625 /* VINReader.swift in Sources */,
 				0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */,
 				06CD21620961AC904915C5E0 /* VehicleCardView.swift in Sources */,
