@@ -70,8 +70,18 @@ struct ConnectionView: View {
                 .fill(badgeColor)
                 .frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 2) {
-                Text(stateTitle)
-                    .font(.valueNumber)
+                HStack(spacing: 6) {
+                    Text(stateTitle)
+                        .font(.valueNumber)
+                    if ble.demoMode {
+                        Text("DEMO")
+                            .font(.monoTiny)
+                            .padding(.horizontal, 5).padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.2))
+                            .foregroundStyle(.orange)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                }
                 Text(stateSubtitle)
                     .font(.captionText)
                     .foregroundStyle(.secondary)
@@ -123,6 +133,9 @@ struct ConnectionView: View {
         case .connecting: return "Negotiating GATT…"
         case .discovering: return "Discovering services and characteristics…"
         case .connected(_, let picked):
+            if ble.demoMode {
+                return "Canned ECU responses — tap Disconnect to pair a real adapter."
+            }
             return "service=\(short(picked.serviceUUID)) tx=\(short(picked.txUUID)) rx=\(short(picked.rxUUID)) (\(picked.source.rawValue))"
         case .error(let msg): return msg
         }

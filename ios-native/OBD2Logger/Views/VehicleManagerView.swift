@@ -147,10 +147,34 @@ struct VehicleManagerSheet: View {
                     .font(.statusText)
                     .foregroundStyle(.tertiary)
             }
+            HStack(alignment: .top, spacing: 8) {
+                Button(role: .destructive) {
+                    removeVehicle(vehicle)
+                } label: {
+                    Text("Remove")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                Text("Deletes this vehicle from the app. Recorded sessions on disk are kept.")
+                    .font(.statusText)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(12)
         .background(Color(red: 22 / 255, green: 24 / 255, blue: 29 / 255))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func removeVehicle(_ vehicle: Vehicle) {
+        do {
+            try vehicleStore.delete(slug: vehicle.slug, owner: vehicle.owner)
+            if settings.activeVehicleSlug == vehicle.slug {
+                settings.activeVehicleSlug = vehicleStore.vehicles.first?.slug
+            }
+            statusMessage = "Removed \(vehicle.displayName) from the app."
+        } catch {
+            statusMessage = "Remove failed: \(error.localizedDescription)"
+        }
     }
 
     private func reprobePIDs(for vehicle: Vehicle) {

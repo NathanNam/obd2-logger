@@ -125,7 +125,12 @@ final class BLEManager: NSObject {
     static let shared = BLEManager()
 
     override init() {
-        let stream = AsyncStream<Data>.makeStream(bufferingPolicy: .unbounded)
+        // bufferingNewest(256) caps memory if the inbound iterator ever
+        // falls behind a chatty adapter — old chunks are useless once the
+        // ELM327 framing has moved past the prompt anyway, so dropping
+        // them is correct, not just expedient. unbounded was a real OOM
+        // risk on long sessions where the MainActor briefly stalled.
+        let stream = AsyncStream<Data>.makeStream(bufferingPolicy: .bufferingNewest(256))
         self.inboundStream = stream.stream
         self.inboundContinuation = stream.continuation
         super.init()

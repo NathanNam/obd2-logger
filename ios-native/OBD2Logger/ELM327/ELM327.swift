@@ -28,7 +28,10 @@ final class ELM327 {
     private var lineBuffer = ""
 
     /// Cap log length so the UI doesn't grow unbounded over a long session.
-    private let maxLogEntries = 400
+    /// Halved from 400 to 150 after a memory-pressure SIGKILL on a 5-minute
+    /// debug-mode session — debug-instrumented LogEntry rendering through
+    /// SwiftUI's identity diffing was the dominant resident-set cost.
+    private let maxLogEntries = 150
 
     private let ble: BLEManager
     private var inboundTask: Task<Void, Never>?
