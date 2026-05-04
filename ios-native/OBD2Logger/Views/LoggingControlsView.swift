@@ -26,12 +26,6 @@ struct LoggingControlsView: View {
                 .pickerStyle(.menu)
                 .disabled(isLogging)
 
-                Toggle("Raw hex", isOn: $settings.rawCapture)
-                    .disabled(isLogging)
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-                Text("Raw hex").font(.captionText).foregroundStyle(.secondary)
-
                 Spacer()
 
                 if isLogging {
@@ -48,10 +42,18 @@ struct LoggingControlsView: View {
                 }
             }
 
-            if !isLogging {
-                Text("Raw hex writes each PID's raw response bytes verbatim instead of decoded values — for verifying a profile or capturing a sweep.")
+            HStack(alignment: .center, spacing: 8) {
+                Toggle("", isOn: $settings.rawCapture)
+                    .disabled(isLogging)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                Text("Raw hex")
+                    .font(.captionText)
+                    .foregroundStyle(.secondary)
+                Text("— writes raw response bytes instead of decoded values.")
                     .font(.statusText)
                     .foregroundStyle(.tertiary)
+                Spacer(minLength: 0)
             }
 
             if case .error(let msg) = session.state {
