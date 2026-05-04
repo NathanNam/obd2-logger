@@ -49,6 +49,24 @@ export function VehicleManager({
     await refresh();
   }
 
+  async function handleReprobe(v: Vehicle) {
+    const proceed = confirm(
+      `Re-probe PIDs for '${v.displayName}'?\n\n` +
+        `Clears ${v.supportedStandardPids.length} cached standard + ${v.supportedProfilePids.length} cached profile PIDs. ` +
+        `Next logging session will re-discover from scratch — useful if the cache has stale false positives.`,
+    );
+    if (!proceed) return;
+    const updated: Vehicle = {
+      ...v,
+      supportedStandardPids: [],
+      supportedProfilePids: [],
+    };
+    await putVehicle(updated);
+    const ownerDir = await ensureOwnerDir(rootDir, settings.owner);
+    await writeVehicleJson(ownerDir, updated);
+    await refresh();
+  }
+
   async function handleProfileChange(v: Vehicle, newProfileId: string) {
     if (newProfileId === v.profileId) return;
     const newProfile = getProfile(newProfileId);
@@ -116,6 +134,12 @@ export function VehicleManager({
                     ) : (
                       <button onClick={() => onActivate(v)}>Activate</button>
                     )}
+                    <button
+                      onClick={() => void handleReprobe(v)}
+                      title={`Clear cached PIDs (${v.supportedStandardPids.length} std + ${v.supportedProfilePids.length} profile) so the next session re-discovers from scratch`}
+                    >
+                      Re-probe
+                    </button>
                     <button
                       onClick={() => void handleDelete(v.slug)}
                       title="Remove from app (files on disk are kept)"
