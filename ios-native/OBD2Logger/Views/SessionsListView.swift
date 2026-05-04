@@ -35,22 +35,7 @@ struct SessionsListView: View {
                     .padding(.vertical, 8)
             } else {
                 ForEach(pageSlice) { record in
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(record.startUTC.replacingOccurrences(of: ".000Z", with: "Z"))
-                                .font(.monoSmall)
-                            Text("\(record.rowCount) rows · \(formatDuration(ms: record.durationMs))")
-                                .font(.monoTiny)
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Text(record.endedReason)
-                            .font(.monoTiny)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(8)
-                    .background(Color(red: 22 / 255, green: 24 / 255, blue: 29 / 255))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    sessionRow(record)
                 }
                 if pageCount > 1 {
                     paginationBar
@@ -91,6 +76,47 @@ struct SessionsListView: View {
             .disabled(page >= pageCount - 1)
         }
         .padding(.top, 4)
+    }
+
+    @ViewBuilder
+    private func sessionRow(_ record: SessionRecord) -> some View {
+        // Tap a row → iOS share sheet (AirDrop / Mail / Save to Files /
+        // copy / etc.) for the session's CSV. Same UX as long-pressing or
+        // tapping a file in the Files app.
+        let url = sessionFileURL(for: record)
+        ShareLink(item: url) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(record.startUTC.replacingOccurrences(of: ".000Z", with: "Z"))
+                        .font(.monoSmall)
+                        .foregroundStyle(.primary)
+                    Text("\(record.rowCount) rows · \(formatDuration(ms: record.durationMs))")
+                        .font(.monoTiny)
+                        .foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Text(record.endedReason)
+                    .font(.monoTiny)
+                    .foregroundStyle(.tertiary)
+                Image(systemName: "square.and.arrow.up")
+                    .font(.captionText)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(8)
+            .background(Color(red: 22 / 255, green: 24 / 255, blue: 29 / 255))
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Resolve a session record's relative `file` path (e.g.
+    /// `sessions/2026-05-04T...csv`) to the on-disk URL inside the app's
+    /// Documents directory.
+    private func sessionFileURL(for record: SessionRecord) -> URL {
+        let owner = settings.owner
+        let slug = settings.activeVehicleSlug ?? ""
+        let relative = "data/\(owner)/\(slug)/\(record.file)"
+        return AppStorage.shared.url(for: relative)
     }
 
     private func reload() {
