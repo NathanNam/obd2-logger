@@ -12,15 +12,15 @@ struct LiveReadoutView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Live readout").font(.subheadline.weight(.semibold))
+                Text("Live readout").font(.cardTitle)
                 Spacer()
                 Text("\(session.liveValues.count) PIDs")
-                    .font(.caption.monospaced())
+                    .font(.monoSmall)
                     .foregroundStyle(.tertiary)
             }
             if session.liveValues.isEmpty {
                 Text("Start logging to see live values.")
-                    .font(.callout)
+                    .font(.bodyText)
                     .foregroundStyle(.tertiary)
                     .padding(.vertical, 8)
             } else {
@@ -38,10 +38,10 @@ struct LiveReadoutView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Text(category.rawValue.capitalized)
-                    .font(.caption.weight(.semibold))
+                    .font(.captionText.weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text("(\(values.count))")
-                    .font(.caption.monospaced())
+                    .font(.monoSmall)
                     .foregroundStyle(.tertiary)
             }
             let columns = [GridItem(.adaptive(minimum: 150), spacing: 6)]
@@ -56,16 +56,16 @@ struct LiveReadoutView: View {
     private func cell(for live: Sampler.LiveValue) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(live.displayName)
-                .font(.caption2)
+                .font(.captionTiny)
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(formatValue(live.value))
-                    .font(.callout.monospaced().weight(.semibold))
+                    .font(.valueNumber)
                     .foregroundStyle(.primary)
                 if !live.unit.isEmpty {
                     Text(live.unit)
-                        .font(.caption2)
+                        .font(.captionTiny)
                         .foregroundStyle(.tertiary)
                 }
             }

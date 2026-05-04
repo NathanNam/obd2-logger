@@ -20,7 +20,7 @@ struct ConnectionView: View {
 
             if let statusError {
                 Text(statusError)
-                    .font(.footnote)
+                    .font(.statusText)
                     .foregroundStyle(.red)
                     .padding(8)
                     .background(Color.red.opacity(0.08))
@@ -33,11 +33,11 @@ struct ConnectionView: View {
                         ForEach(elm.log) { entry in
                             HStack(alignment: .top, spacing: 8) {
                                 Text(entry.direction.rawValue.uppercased())
-                                    .font(.system(.caption2, design: .monospaced))
+                                    .font(.monoTiny)
                                     .foregroundStyle(color(for: entry.direction))
                                     .frame(width: 36, alignment: .leading)
                                 Text(entry.text)
-                                    .font(.system(.caption, design: .monospaced))
+                                    .font(.monoSmall)
                                     .foregroundStyle(entry.direction == .err ? .red : .primary)
                                     .textSelection(.enabled)
                             }
@@ -50,7 +50,7 @@ struct ConnectionView: View {
                 .background(Color.black.opacity(0.4))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             }
-            .font(.footnote)
+            .font(.statusText)
             .foregroundStyle(.secondary)
         }
         .padding(16)
@@ -71,9 +71,9 @@ struct ConnectionView: View {
                 .frame(width: 10, height: 10)
             VStack(alignment: .leading, spacing: 2) {
                 Text(stateTitle)
-                    .font(.system(.callout, design: .monospaced).weight(.semibold))
+                    .font(.valueNumber)
                 Text(stateSubtitle)
-                    .font(.caption)
+                    .font(.captionText)
                     .foregroundStyle(.secondary)
             }
         }

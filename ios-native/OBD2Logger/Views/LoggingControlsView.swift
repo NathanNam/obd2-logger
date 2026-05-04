@@ -11,7 +11,7 @@ struct LoggingControlsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Logging").font(.subheadline.weight(.semibold))
+                Text("Logging").font(.cardTitle)
                 Spacer()
                 statusLabel
             }
@@ -30,7 +30,7 @@ struct LoggingControlsView: View {
                     .disabled(isLogging)
                     .toggleStyle(.switch)
                     .labelsHidden()
-                Text("Raw hex").font(.caption).foregroundStyle(.secondary)
+                Text("Raw hex").font(.captionText).foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -50,17 +50,17 @@ struct LoggingControlsView: View {
 
             if case .error(let msg) = session.state {
                 Text(msg)
-                    .font(.footnote)
+                    .font(.statusText)
                     .foregroundStyle(.red)
             }
             if case .preparing(let step) = session.state {
                 Text(step)
-                    .font(.footnote)
+                    .font(.statusText)
                     .foregroundStyle(.secondary)
             }
             if case .logging(let count, let id) = session.state {
                 Text("rows: \(count) · id: \(id)")
-                    .font(.caption.monospaced())
+                    .font(.monoSmall)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -84,13 +84,13 @@ struct LoggingControlsView: View {
         Group {
             switch session.state {
             case .idle:
-                Text("Ready").font(.caption).foregroundStyle(.secondary)
+                Text("Ready").font(.captionText).foregroundStyle(.secondary)
             case .preparing:
-                Text("Preparing…").font(.caption).foregroundStyle(.blue)
+                Text("Preparing…").font(.captionText).foregroundStyle(.blue)
             case .logging:
-                Text("Logging").font(.caption).foregroundStyle(.green)
+                Text("Logging").font(.captionText).foregroundStyle(.green)
             case .error:
-                Text("Error").font(.caption).foregroundStyle(.red)
+                Text("Error").font(.captionText).foregroundStyle(.red)
             }
         }
     }

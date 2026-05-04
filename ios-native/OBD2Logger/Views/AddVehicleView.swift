@@ -45,7 +45,7 @@ struct AddVehicleView: View {
                         }
                 }
                 if let statusText {
-                    Section { Text(statusText).font(.footnote).foregroundStyle(statusColor) }
+                    Section { Text(statusText).font(.statusText).foregroundStyle(statusColor) }
                 }
                 Section("Profile") {
                     Picker("Profile", selection: $profileID) {

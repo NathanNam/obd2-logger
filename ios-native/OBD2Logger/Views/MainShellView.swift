@@ -14,7 +14,7 @@ struct MainShellView: View {
 
                     if let error = profileRegistry.loadError {
                         Text("Profile error: \(error)")
-                            .font(.footnote)
+                            .font(.statusText)
                             .foregroundStyle(.red)
                     }
 
@@ -49,10 +49,10 @@ struct MainShellView: View {
                 Text("obd2").foregroundStyle(.white)
                 Text("/logger").foregroundStyle(Color(red: 92 / 255, green: 196 / 255, blue: 1.0))
             }
-            .font(.system(.title2, design: .monospaced, weight: .bold))
+            .font(.appBrand)
             Spacer()
             Text("owner: \(settings.owner)")
-                .font(.caption.monospaced())
+                .font(.monoSmall)
                 .foregroundStyle(.tertiary)
         }
     }

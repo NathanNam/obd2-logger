@@ -63,18 +63,18 @@ struct OnboardingView: View {
     private var stepIndicator: some View {
         HStack(spacing: 8) {
             Text("Setup")
-                .font(.system(.caption, design: .monospaced))
+                .font(.monoSmall)
                 .foregroundStyle(.tertiary)
                 .textCase(.uppercase)
             Spacer()
             stepDot(active: step == .name, done: step == .pair, label: "1")
             Text("Name")
-                .font(.caption.monospaced())
+                .font(.monoSmall)
                 .foregroundStyle(step == .name ? .primary : .secondary)
             Rectangle().fill(Color.secondary.opacity(0.3)).frame(width: 16, height: 1)
             stepDot(active: step == .pair, done: false, label: "2")
             Text("Adapter")
-                .font(.caption.monospaced())
+                .font(.monoSmall)
                 .foregroundStyle(step == .pair ? .primary : .tertiary)
         }
     }
@@ -85,7 +85,7 @@ struct OnboardingView: View {
                 .fill(done ? Color.green : (active ? Color.accentColor : Color.secondary.opacity(0.3)))
                 .frame(width: 18, height: 18)
             Text(label)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.monoTiny.weight(.bold))
                 .foregroundStyle(.white)
         }
     }
@@ -95,11 +95,11 @@ struct OnboardingView: View {
     private var nameStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("What should we call you?")
-                .font(.title2.weight(.semibold))
+                .font(.stepTitle)
             Text("Used to label your data folder so you can share with friends later. Lowercase letters, digits, and dashes — like a folder name.")
                 .foregroundStyle(.secondary)
             Text("Your data lives inside the OBD2 Logger app folder, accessible from the iOS Files app under On My iPhone → OBD2 Logger.")
-                .font(.callout)
+                .font(.bodyText)
                 .foregroundStyle(.tertiary)
 
             TextField("owner", text: $pendingOwner)
@@ -110,7 +110,7 @@ struct OnboardingView: View {
 
             if let nameError {
                 Text(nameError)
-                    .font(.footnote)
+                    .font(.statusText)
                     .foregroundStyle(.red)
             }
 
@@ -137,14 +137,14 @@ struct OnboardingView: View {
     private var pairStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Pair your OBD2 adapter")
-                .font(.title2.weight(.semibold))
+                .font(.stepTitle)
             Text("Plug the adapter into your car's OBD2 port and key the ignition to ON (or push-start to READY for hybrids). The adapter's LED should light up.")
                 .foregroundStyle(.secondary)
 
             switch pairing {
             case .idle:
                 Text("Tap below to scan for nearby BLE adapters.")
-                    .font(.callout)
+                    .font(.bodyText)
                     .foregroundStyle(.tertiary)
             case .connecting(let name):
                 statusLine(spinner: true, label: "Connecting to \(name)…")
@@ -156,7 +156,7 @@ struct OnboardingView: View {
 
             if let pairError {
                 Text(pairError)
-                    .font(.footnote)
+                    .font(.statusText)
                     .foregroundStyle(.red)
                     .padding(8)
                     .background(Color.red.opacity(0.08))
@@ -217,7 +217,7 @@ struct OnboardingView: View {
         HStack(spacing: 10) {
             if spinner { ProgressView() }
             Text(label)
-                .font(.callout)
+                .font(.bodyText)
                 .foregroundStyle(.secondary)
         }
     }
