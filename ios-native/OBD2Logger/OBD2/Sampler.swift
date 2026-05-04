@@ -32,11 +32,18 @@ final class Sampler {
 
     private var task: Task<Void, Never>?
     private var stopped = false
+    private var tickCount: Int = 0
 
     /// Per-PID strike counter. After 3 NO_DATA responses, the PID is demoted
     /// (skipped on subsequent ticks) to keep tick rate high.
     private var strikes: [String: Int] = [:]
     private(set) var disabledPIDs: Set<String> = []
+
+    /// Periodically un-demote silent PIDs so we can re-detect them coming
+    /// back online. Critical for hybrids: in EV mode the ICE PIDs go
+    /// silent and would otherwise stay demoted for the whole session,
+    /// missing the 2-3 minutes the engine actually runs.
+    private let rehabEveryNTicks = 30
 
     var onValue: ((LiveValue) -> Void)?
     var onTick: ((TickRow) -> Void)?
@@ -83,40 +90,72 @@ final class Sampler {
     }
 
     private func runOneTick() async -> TickRow {
+        tickCount += 1
+        // Every N ticks, give demoted PIDs another shot. If they're still
+        // silent they'll re-demote within ~3 ticks; meanwhile we capture
+        // anything that has come back online (ICE waking up in a hybrid,
+        // BMS becoming active under load, etc.).
+        if tickCount % rehabEveryNTicks == 0, !disabledPIDs.isEmpty {
+            NSLog("[Sampler] rehab tick \(tickCount): un-demoting \(disabledPIDs.count) PIDs")
+            disabledPIDs.removeAll()
+            strikes.removeAll()
+        }
+
         let startMs = Int(Date().timeIntervalSince1970 * 1000)
         let elapsedMs = startMs - sessionStartMs
         let timestampISO = ISO8601DateFormatter.utcMs.string(from: Date())
 
         var values: [String: String] = [:]
-        // Group enabled PIDs by ECU. For each group, set ATSH<request_header>
-        // once before issuing the PIDs in that group. Without this, Mode 21
-        // PIDs on non-engine ECUs (hybrid_controller, transmission) get
-        // delivered to the wrong ECU via the broadcast functional address
-        // and silently return NO_DATA. Mirrors the web sampler's behavior
-        // (`src/obd/sampler.ts` groupByEcu + ATSH before each group).
+        // Group enabled PIDs by ECU, then dedupe identical (mode, pid)
+        // queries within each group. Several PidDefs can share one query
+        // and read different bytes — e.g. battery_temp_1..4 all use
+        // Mode 21 PID 95. Sending the query once and applying all four
+        // formulas to the response is faster *and* avoids tripping
+        // adapter rate limits on rapid-fire identical queries.
+        // Per-group ATSH<request_header> before queries — Mode 21 PIDs
+        // on non-engine ECUs only respond when explicitly addressed.
         let groups = groupByEcu(pids.filter { !disabledPIDs.contains($0.id) })
         for (ecuName, groupPIDs) in groups {
             if let ecu = ecus[ecuName] {
                 _ = try? await elm.send("ATSH\(ecu.requestHeader)", timeout: 0.8)
             }
-            for pid in groupPIDs {
-                let request = pid.mode + pid.pid
+            for (mode, pid, defs) in dedupeByQuery(groupPIDs) {
+                let request = mode + pid
+                let response: String
                 do {
-                    let response = try await elm.send(request, timeout: 1.0)
-                    let normalized = response.uppercased()
-                        .replacingOccurrences(of: " ", with: "")
-                        .replacingOccurrences(of: "\n", with: "")
-                        .replacingOccurrences(of: "\r", with: "")
-                    if normalized.contains("NODATA") {
-                        bumpStrike(pid.id)
-                        continue
-                    }
-                    guard let bytes = HexParsing.bytes(normalized) else { continue }
-                    guard let payload = stripResponseCode(bytes: bytes, mode: pid.mode, pid: pid.pid) else {
-                        continue
-                    }
-                    strikes[pid.id] = 0  // success → reset strike counter
-                    let evaluated = evaluator.evaluate(formula: pid.formula, bytes: payload)
+                    response = try await elm.send(request, timeout: 1.0)
+                } catch {
+                    for def in defs { bumpStrike(def.id) }
+                    continue
+                }
+                let normalized = response.uppercased()
+                    .replacingOccurrences(of: " ", with: "")
+                    .replacingOccurrences(of: "\n", with: "")
+                    .replacingOccurrences(of: "\r", with: "")
+                if normalized.contains("NODATA") {
+                    NSLog("[Sampler] \(request) → NO DATA (defs: \(defs.map { $0.id }))")
+                    for def in defs { bumpStrike(def.id) }
+                    continue
+                }
+                guard let bytes = HexParsing.bytes(normalized) else {
+                    NSLog("[Sampler] \(request) → unparseable: \"\(normalized)\"")
+                    continue
+                }
+                guard let payload = stripResponseCode(bytes: bytes, mode: mode, pid: pid) else {
+                    NSLog("[Sampler] \(request) → no positive prefix in \"\(normalized)\"")
+                    for def in defs { bumpStrike(def.id) }
+                    continue
+                }
+                // SAE J1979 sentinel: all-0xFF payload means "I support
+                // this PID but have no data right now." Treat as missing
+                // rather than decoding a literal 65535 km / 255.
+                if !payload.isEmpty, payload.allSatisfy({ $0 == 0xFF }) {
+                    for def in defs { bumpStrike(def.id) }
+                    continue
+                }
+                for def in defs {
+                    strikes[def.id] = 0
+                    let evaluated = evaluator.evaluate(formula: def.formula, bytes: payload)
                     let formatted: String = {
                         if let v = evaluated {
                             return Sampler.format(value: v)
@@ -124,22 +163,37 @@ final class Sampler {
                             return HexParsing.hex(payload)
                         }
                     }()
-                    values[pid.id] = formatted
+                    values[def.id] = formatted
                     let live = LiveValue(
-                        pidID: pid.id,
+                        pidID: def.id,
                         raw: HexParsing.hex(payload),
                         value: evaluated,
-                        unit: pid.unit,
-                        displayName: pid.displayName
+                        unit: def.unit,
+                        displayName: def.displayName
                     )
                     onValue?(live)
-                } catch {
-                    bumpStrike(pid.id)
-                    continue
                 }
             }
         }
         return TickRow(timestampISO: timestampISO, elapsedMs: elapsedMs, values: values)
+    }
+
+    /// Group PIDs that share a (mode, pid) query so we issue one request
+    /// per unique query instead of N copies. Preserves first-seen order.
+    private func dedupeByQuery(_ pids: [PidDef]) -> [(mode: String, pid: String, defs: [PidDef])] {
+        var keyOrder: [String] = []
+        var byKey: [String: (String, String, [PidDef])] = [:]
+        for pid in pids {
+            let key = "\(pid.mode)\(pid.pid)".uppercased()
+            if var existing = byKey[key] {
+                existing.2.append(pid)
+                byKey[key] = existing
+            } else {
+                byKey[key] = (pid.mode, pid.pid, [pid])
+                keyOrder.append(key)
+            }
+        }
+        return keyOrder.compactMap { byKey[$0] }
     }
 
     /// Stable iteration order: sort ECU names alphabetically so output is

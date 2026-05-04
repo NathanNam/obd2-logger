@@ -34,12 +34,19 @@ final class FormulaEvaluator {
     /// the result is non-numeric.
     func evaluate(formula: String, bytes: [UInt8]) -> Double? {
         guard let fn = compiledFunction(for: formula) else { return nil }
-        let args: [Any] = (0..<10).map { i -> Int in
-            bytes.indices.contains(i) ? Int(bytes[i]) : 0
+        // Pass `undefined` (not 0) for bytes the response didn't supply.
+        // JS arithmetic with undefined yields NaN, which we map to nil
+        // below. Defaulting to 0 produced wildly wrong values — e.g. the
+        // Lexus mg-torque formula `((D*256+E)-32768)/8` with D=E=0 returns
+        // -4096 Nm, far outside any drivetrain's physical range.
+        let undefined = JSValue(undefinedIn: context) ?? JSValue()
+        let args: [Any] = (0..<10).map { i -> Any in
+            bytes.indices.contains(i) ? Int(bytes[i]) : undefined as Any
         }
         guard let result = fn.call(withArguments: args) else { return nil }
         if result.isNumber {
-            return result.toDouble()
+            let d = result.toDouble()
+            return d.isFinite ? d : nil
         }
         return nil
     }

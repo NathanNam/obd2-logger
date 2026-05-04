@@ -7,6 +7,10 @@ import {
 } from "./registry-builder";
 
 const NO_DATA_STRIKES_TO_DEMOTE = 3;
+// Periodically un-demote silent PIDs so we re-detect ones that come back
+// online — critical for hybrids where ICE-only PIDs go silent in EV mode
+// and would otherwise stay demoted for the whole drive.
+const REHAB_EVERY_N_TICKS = 30;
 
 export type TickRow = {
   tickStart: number;
@@ -148,6 +152,13 @@ export class Sampler {
     let completedCount = 0;
     let enabledCount = 0;
 
+    // Strike rehab: every N ticks, give demoted PIDs another shot.
+    // Anything still silent will re-demote within ~3 ticks.
+    if (this.tickCount > 0 && this.tickCount % REHAB_EVERY_N_TICKS === 0 && this.demoted.size > 0) {
+      this.demoted.clear();
+      this.noDataStreaks.clear();
+    }
+
     const groups = groupByEcu(
       this.opts.registry.filter((e) => e.enabled && !this.demoted.has(e.def.id)),
     );
@@ -168,53 +179,66 @@ export class Sampler {
       if (ecu) {
         await this.opts.elm.send(`ATSH${ecu.request_header}`, { timeoutMs: 800 }).catch(() => null);
       }
-      for (const entry of entries) {
+      // Dedupe identical (mode, pid) queries within the group: e.g.
+      // battery_temp_1..4 all read different bytes from the same PID 95
+      // response. One query, four formulas. Faster + avoids tripping
+      // adapter rate-limits on rapid-fire identical queries.
+      for (const queryGroup of dedupeByQuery(entries)) {
         if (!this.running) break;
-        const cmd = buildCommand(entry.def);
+        const cmd = buildCommand(queryGroup[0].def);
         let resp;
         try {
           resp = await this.opts.elm.send(cmd, { timeoutMs: 1200 });
         } catch {
-          values[entry.def.id] = null;
+          for (const entry of queryGroup) values[entry.def.id] = null;
           continue;
         }
         if (resp.errors.includes("NO_DATA")) {
-          this.bumpNoData(entry.def.id);
-          values[entry.def.id] = null;
+          for (const entry of queryGroup) {
+            this.bumpNoData(entry.def.id);
+            values[entry.def.id] = null;
+          }
           continue;
         }
         if (resp.errors.length) {
-          values[entry.def.id] = null;
+          for (const entry of queryGroup) values[entry.def.id] = null;
           continue;
         }
-        const outcome = decodePidResponse(entry.def, resp.lines);
-        const hex = outcome.rawBytes
-          .map((b) => b.toString(16).padStart(2, "0"))
-          .join("")
-          .toUpperCase();
-        if (rawMode) {
-          if (hex.length > 0) {
-            values[entry.def.id] = hex;
+        for (const entry of queryGroup) {
+          const outcome = decodePidResponse(entry.def, resp.lines);
+          const hex = outcome.rawBytes
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("")
+            .toUpperCase();
+          if (rawMode) {
+            if (hex.length > 0) {
+              values[entry.def.id] = hex;
+              rawHex[entry.def.id] = hex;
+              completedCount++;
+              this.noDataStreaks.delete(entry.def.id);
+            } else {
+              values[entry.def.id] = null;
+            }
+          } else if (outcome.ok) {
+            values[entry.def.id] = outcome.value;
             rawHex[entry.def.id] = hex;
             completedCount++;
             this.noDataStreaks.delete(entry.def.id);
+            for (const l of this.valueListeners) {
+              try {
+                l({ id: entry.def.id, value: outcome.value, isoTimestamp });
+              } catch {
+                // ignore
+              }
+            }
           } else {
             values[entry.def.id] = null;
-          }
-        } else if (outcome.ok) {
-          values[entry.def.id] = outcome.value;
-          rawHex[entry.def.id] = hex;
-          completedCount++;
-          this.noDataStreaks.delete(entry.def.id);
-          for (const l of this.valueListeners) {
-            try {
-              l({ id: entry.def.id, value: outcome.value, isoTimestamp });
-            } catch {
-              // ignore
+            // Treat the all-FF sentinel as a silence vote — it means
+            // "supported but no data right now," not a real reading.
+            if (outcome.reason === "all-FF-sentinel") {
+              this.bumpNoData(entry.def.id);
             }
           }
-        } else {
-          values[entry.def.id] = null;
         }
       }
     }
@@ -230,11 +254,32 @@ export class Sampler {
     };
   }
 
+
   private bumpNoData(id: string): void {
     const next = (this.noDataStreaks.get(id) ?? 0) + 1;
     this.noDataStreaks.set(id, next);
     if (next >= NO_DATA_STRIKES_TO_DEMOTE) this.demoted.add(id);
   }
+}
+
+/// Group entries that share a (mode, pid) query, preserving first-seen
+/// order. Multiple PidDefs reading different bytes from the same response
+/// (e.g. battery_temp_1..4 from PID 95) are batched so we send the query
+/// once per tick instead of once per def.
+function dedupeByQuery(entries: RegistryEntry[]): RegistryEntry[][] {
+  const order: string[] = [];
+  const groups = new Map<string, RegistryEntry[]>();
+  for (const entry of entries) {
+    const key = `${entry.def.mode}${entry.def.pid}`.toUpperCase();
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(entry);
+    } else {
+      groups.set(key, [entry]);
+      order.push(key);
+    }
+  }
+  return order.map((k) => groups.get(k)!);
 }
 
 function wait(ms: number): Promise<void> {

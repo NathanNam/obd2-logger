@@ -28,6 +28,12 @@ export function decodePidResponse(def: PidDef, lines: string[]): DecodeOutcome {
     if (bytes.length === 0) {
       return { ok: false, reason: "no-payload", rawBytes: bytes };
     }
+    // SAE J1979 convention: ECUs report "I support this PID but have no
+    // data right now" by returning all-0xFF in the payload. Treat it as
+    // missing, not as a real value of 65535 km / 255 / etc.
+    if (bytes.every((b) => b === 0xff)) {
+      return { ok: false, reason: "all-FF-sentinel", rawBytes: bytes };
+    }
     try {
       const value = evaluateFormula(def.formula, bytes);
       return { ok: true, value, rawBytes: bytes };
