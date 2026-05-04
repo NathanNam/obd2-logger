@@ -137,11 +137,16 @@ struct VehicleManagerSheet: View {
                     .controlSize(.small)
                 }
             }
-            Button("Re-probe PIDs") {
-                reprobePIDs(for: vehicle)
+            HStack(alignment: .top, spacing: 8) {
+                Button("Re-probe PIDs") {
+                    reprobePIDs(for: vehicle)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                Text("Clears the cached supported-PID list. Next session re-runs the discovery + probe from scratch.")
+                    .font(.statusText)
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
         .padding(12)
         .background(Color(red: 22 / 255, green: 24 / 255, blue: 29 / 255))

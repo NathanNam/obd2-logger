@@ -48,6 +48,12 @@ struct LoggingControlsView: View {
                 }
             }
 
+            if !isLogging {
+                Text("Raw hex writes each PID's raw response bytes verbatim instead of decoded values — for verifying a profile or capturing a sweep.")
+                    .font(.statusText)
+                    .foregroundStyle(.tertiary)
+            }
+
             if case .error(let msg) = session.state {
                 Text(msg)
                     .font(.statusText)
