@@ -8,12 +8,18 @@ struct ContentView: View {
     // adapter, and double-attaching to BLEManager's inboundStream silently
     // breaks framing.
     @State private var elm = ELM327()
-    @State private var onboardingComplete: Bool = !SettingsStore.shared.owner.isEmpty
+
+    /// Whether onboarding is complete. Derived directly from
+    /// `settings.owner` (which is @Observable) so the "Reset app" footer
+    /// can simply clear `owner` and SwiftUI re-routes us back to the
+    /// OnboardingView automatically — no separate state to coordinate.
+    private var onboardingComplete: Bool { !settings.owner.isEmpty }
 
     var body: some View {
         if !onboardingComplete {
             OnboardingView(elm: elm) {
-                onboardingComplete = true
+                // No-op: completing the onboarding now just persists owner,
+                // and the computed `onboardingComplete` flips on its own.
             }
         } else {
             MainShellView(elm: elm)

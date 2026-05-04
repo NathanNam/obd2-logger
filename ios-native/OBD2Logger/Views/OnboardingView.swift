@@ -235,7 +235,26 @@ struct OnboardingView: View {
                     .disabled(isPairing)
                 }
             }
+
+            // Always-visible escape hatch: lets a reviewer / curious user
+            // explore the app end-to-end without an OBD2 adapter. Wires
+            // ELM327 + BLEManager into demo mode so subsequent queries
+            // return canned responses; flow continues normally from there.
+            if pairing == .idle, !isPairing {
+                Button("Don't have an adapter? Try demo mode") {
+                    enterDemoMode()
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+                .frame(maxWidth: .infinity)
+            }
         }
+    }
+
+    private func enterDemoMode() {
+        ble.enterDemoMode()
+        elm.attach()  // log + lineBuffer reset; inboundTask is a no-op in demo
+        pairing = .ready("DEMO ADAPTER")
     }
 
     private var scanButtonLabel: String {

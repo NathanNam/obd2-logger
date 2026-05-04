@@ -67,6 +67,29 @@ final class BLEManager: NSObject {
     private(set) var connectionState: ConnectionState = .idle
     private(set) var discovered: [DiscoveredDevice] = []
 
+    /// Demo mode: skip real BLE and pretend a `DEMO ADAPTER` is connected
+    /// so the rest of the app can run end-to-end (live readout, sessions,
+    /// CSV writes) with no hardware. Triggered by the "Use demo mode"
+    /// link in onboarding step 2 — see `enterDemoMode()`.
+    private(set) var demoMode: Bool = false
+
+    /// Synthesize a connected state and flip the demo flag. ELM327 reads
+    /// the same flag via its own `demoMode` property; the caller is
+    /// expected to set both. Idempotent.
+    func enterDemoMode() {
+        guard !demoMode else { return }
+        demoMode = true
+        connectionState = .connected(
+            name: "DEMO ADAPTER",
+            picked: PickedDescription(
+                serviceUUID: "0000FFF0-0000-1000-8000-00805F9B34FB",
+                txUUID: "0000FFF2-0000-1000-8000-00805F9B34FB",
+                rxUUID: "0000FFF1-0000-1000-8000-00805F9B34FB",
+                source: .known
+            )
+        )
+    }
+
     // MARK: - Inbound notification stream
 
     /// Yields raw byte chunks as the rx characteristic notifies. Subscribers
@@ -102,7 +125,12 @@ final class BLEManager: NSObject {
     static let shared = BLEManager()
 
     override init() {
-        let stream = AsyncStream<Data>.makeStream(bufferingPolicy: .unbounded)
+        // bufferingNewest(256) caps memory if the inbound iterator ever
+        // falls behind a chatty adapter — old chunks are useless once the
+        // ELM327 framing has moved past the prompt anyway, so dropping
+        // them is correct, not just expedient. unbounded was a real OOM
+        // risk on long sessions where the MainActor briefly stalled.
+        let stream = AsyncStream<Data>.makeStream(bufferingPolicy: .bufferingNewest(256))
         self.inboundStream = stream.stream
         self.inboundContinuation = stream.continuation
         super.init()
@@ -174,6 +202,12 @@ final class BLEManager: NSObject {
 
     /// Disconnect cleanly and reset connection state.
     func disconnect() {
+        if demoMode {
+            // No real peripheral to tear down — just exit demo mode.
+            demoMode = false
+            connectionState = .idle
+            return
+        }
         if let p = peripheral {
             central.cancelPeripheralConnection(p)
         }
