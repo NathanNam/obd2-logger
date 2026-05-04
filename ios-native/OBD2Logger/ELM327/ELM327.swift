@@ -68,9 +68,17 @@ final class ELM327 {
         }
     }
 
+    /// Clear in-flight command state, but deliberately keep the inbound
+    /// task alive. `BLEManager.shared.inboundStream` is a single
+    /// AsyncStream and re-iterating it (which a fresh `attach()` after a
+    /// `task = nil` would do) hits Swift's documented "calling
+    /// `makeAsyncIterator()` twice = undefined behavior" path. The
+    /// observable symptom was that after a Disconnect → Reconnect cycle,
+    /// the ELM init handshake would stall after the first response and
+    /// the user would see only ~2 entries in the adapter log instead of
+    /// the usual 24, with logging then failing to start. Keeping the
+    /// inbound task across detach/attach preserves the single iteration.
     func detach() {
-        inboundTask?.cancel()
-        inboundTask = nil
         if let inFlight {
             inFlight.resume(throwing: ELMError.cancelled)
             self.inFlight = nil

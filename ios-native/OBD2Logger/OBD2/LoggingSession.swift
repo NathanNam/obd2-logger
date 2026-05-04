@@ -29,6 +29,16 @@ final class LoggingSession {
     private var sampleRateHz: Double = 1.0
     private var rawMode: Bool = false
 
+    /// Smart-stop state: count consecutive ticks where every PID returned
+    /// no data. After ~60s of those, the session auto-stops and is tagged
+    /// `auto_stop_idle` in the manifest. Catches the common "user forgot
+    /// to tap Stop after parking" case.
+    private var emptyTickStreak: Int = 0
+    private var autoStopAfterEmptyTicks: Int {
+        // 60 seconds of empty ticks, scaled to the active sample rate.
+        max(10, Int((60.0 * sampleRateHz).rounded()))
+    }
+
     static let shared = LoggingSession()
 
     /// Start a new logging session. Probes profile PIDs against the live ECU
@@ -134,10 +144,18 @@ final class LoggingSession {
                 sessionStartMs: sessionStartMs
             )
             sampler.onValue = { [weak self] live in
-                self?.liveValues[live.pidID] = live
+                guard let self, case .logging = self.state else { return }
+                self.liveValues[live.pidID] = live
             }
             sampler.onTick = { [weak self] row in
-                guard let self else { return }
+                // The sampler dispatches onTick via `MainActor.run` at the
+                // end of each tick. cleanup() also runs on MainActor, so a
+                // tick already in flight when the user taps Stop ends up
+                // queued *behind* cleanup. Without the state guard, that
+                // late onTick clobbers `state = .idle` with a fresh
+                // `.logging(...)`, the UI flips back to "Stop", and the
+                // user has to tap a second time.
+                guard let self, case .logging = self.state else { return }
                 do {
                     try self.writer?.writeRow(
                         timestampISO: row.timestampISO,
@@ -148,6 +166,20 @@ final class LoggingSession {
                     self.state = .logging(rowCount: count, sessionID: self.sessionID)
                 } catch {
                     // Don't crash the sampler on a transient write failure.
+                }
+
+                // Smart-stop: if the user forgot to tap Stop and the car
+                // is parked / off, the sampler keeps writing empty rows.
+                // After ~60 seconds of consecutive empty ticks, auto-stop
+                // and tag the session as `auto_stop_idle` in the manifest.
+                if row.values.isEmpty {
+                    self.emptyTickStreak += 1
+                    if self.emptyTickStreak >= self.autoStopAfterEmptyTicks {
+                        self.emptyTickStreak = 0  // don't refire while cleanup races
+                        Task { await self.stop(reason: "auto_stop_idle") }
+                    }
+                } else {
+                    self.emptyTickStreak = 0
                 }
             }
             sampler.start()
@@ -222,6 +254,7 @@ final class LoggingSession {
         elm = nil
         profile = nil
         liveValues.removeAll()
+        emptyTickStreak = 0
         if case .error = state {
             // keep error state so UI can show it
         } else {
