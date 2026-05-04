@@ -14,6 +14,7 @@ final class Sampler {
         let value: Double?
         let unit: String
         let displayName: String
+        let category: PidCategory
     }
 
     struct TickRow {
@@ -186,7 +187,8 @@ final class Sampler {
                         raw: HexParsing.hex(payload),
                         value: evaluated,
                         unit: def.unit,
-                        displayName: def.displayName
+                        displayName: def.displayName,
+                        category: def.category
                     )
                     onValue?(live)
                 }
