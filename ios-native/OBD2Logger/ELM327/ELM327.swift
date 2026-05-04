@@ -42,12 +42,16 @@ final class ELM327 {
         self.ble = BLEManager.shared
     }
 
-    /// Begin consuming inbound data, framing on the `>` prompt. Resets the
-    /// adapter log so retries don't leave stale entries from previous attempts.
+    /// Begin consuming inbound data, framing on the `>` prompt. Idempotent —
+    /// `BLEManager.shared.inboundStream` is a single AsyncStream and Swift's
+    /// `makeAsyncIterator()` is documented as undefined-behavior to call
+    /// twice, so we only ever spawn one iterating task per app lifetime.
+    /// Subsequent calls just clear the log + line buffer so the UI shows
+    /// a fresh adapter-log view on reconnects.
     func attach() {
-        inboundTask?.cancel()
         log.removeAll()
         lineBuffer = ""
+        if inboundTask != nil { return }
         let stream = ble.inboundStream
         inboundTask = Task { [weak self] in
             for await data in stream {

@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct MainShellView: View {
+    let elm: ELM327
     var settings = SettingsStore.shared
     var vehicleStore = VehicleStore.shared
     var profileRegistry = ProfileRegistry.shared
-    @State private var elm = ELM327()
 
     var body: some View {
         NavigationStack {
@@ -18,9 +18,12 @@ struct MainShellView: View {
                             .foregroundStyle(.red)
                     }
 
-                    VehicleManagerView(elm: elm)
-
+                    // Connection first — the user always needs to know
+                    // whether the adapter is alive before anything else
+                    // matters. Vehicle + Logging follow.
                     ConnectionView(elm: elm)
+
+                    VehicleManagerView(elm: elm)
 
                     LoggingControlsView(elm: elm)
 
