@@ -137,11 +137,7 @@ final class Sampler {
                     for def in defs { bumpStrike(def.id) }
                     continue
                 }
-                guard let bytes = HexParsing.bytes(normalized) else {
-                    NSLog("[Sampler] \(request) → unparseable: \"\(normalized)\"")
-                    continue
-                }
-                guard let payload = stripResponseCode(bytes: bytes, mode: mode, pid: pid) else {
+                guard let payload = extractPayload(response: response, mode: mode, pid: pid) else {
                     NSLog("[Sampler] \(request) → no positive prefix in \"\(normalized)\"")
                     for def in defs { bumpStrike(def.id) }
                     continue
@@ -220,14 +216,44 @@ final class Sampler {
         return String(rounded)
     }
 
-    /// Find `4<mode><pid>` in `bytes` and return everything after.
-    private func stripResponseCode(bytes: [UInt8], mode: String, pid: String) -> [UInt8]? {
-        guard let modeByte = UInt8(mode, radix: 16),
-              let pidByte = UInt8(pid, radix: 16) else { return nil }
-        let positive = modeByte + 0x40
-        for i in 0..<(bytes.count - 1) {
-            if bytes[i] == positive && bytes[i + 1] == pidByte {
-                return Array(bytes[(i + 2)...])
+    /// Extract the payload bytes (everything after the positive response
+    /// code) from an ELM327 response. Handles both single-frame responses
+    /// like `61617170778000` and multi-frame ISO-TP responses where each
+    /// frame is prefixed with `<digit>:` and a leading length byte appears
+    /// on its own line:
+    ///
+    ///     011
+    ///     0:61951B1A1A1A1A
+    ///     1:1B1A1A1A1A1A1A1B
+    ///     2:1B1B1A1B00
+    ///     0000
+    ///
+    /// The previous implementation `HexParsing.bytes` rejected any string
+    /// containing `:`, so multi-frame responses were silently dropped —
+    /// every Mode 21 PID with a long payload (PID 95 battery temps, PID 98
+    /// HV voltage on Lexus hybrids) ended up at 0% coverage. Splitting on
+    /// newlines and searching each line for the response prefix mirrors
+    /// what the web app's `decodePidResponse` does.
+    private func extractPayload(response: String, mode: String, pid: String) -> [UInt8]? {
+        guard let modeByte = UInt8(mode, radix: 16) else { return nil }
+        let prefix = String(format: "%02X%@", modeByte + 0x40, pid.uppercased())
+        let lines = response.uppercased()
+            .components(separatedBy: .whitespacesAndNewlines)
+            .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: " ", with: "") }
+            .filter { !$0.isEmpty }
+        for line in lines {
+            // Strip a leading "<digit>:" frame-index prefix if present.
+            let cleaned: String
+            if let colonIdx = line.firstIndex(of: ":"),
+               line.distance(from: line.startIndex, to: colonIdx) <= 2,
+               line[..<colonIdx].allSatisfy({ $0.isHexDigit }) {
+                cleaned = String(line[line.index(after: colonIdx)...])
+            } else {
+                cleaned = line
+            }
+            if let prefixRange = cleaned.range(of: prefix) {
+                let after = String(cleaned[prefixRange.upperBound...])
+                return HexParsing.bytes(after)
             }
         }
         return nil
