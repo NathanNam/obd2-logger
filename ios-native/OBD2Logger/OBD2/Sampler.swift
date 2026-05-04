@@ -45,6 +45,15 @@ final class Sampler {
     /// missing the 2-3 minutes the engine actually runs.
     private let rehabEveryNTicks = 30
 
+    /// Inter-query gap. Some ELM327 firmwares (Veepeak's in particular)
+    /// emit `STOPPED` if the next command arrives before the prompt for
+    /// the previous one has fully settled — which on multi-frame Mode 21
+    /// responses takes 5-10 ms past the last `>`. Without this gap, the
+    /// adapter periodically aborts queries mid-flight and per-tick PID
+    /// coverage drops to 50-70%. With it, coverage stabilises at 99%
+    /// (matching the web app's pacing).
+    private let interQueryGapNs: UInt64 = 20_000_000  // 20 ms
+
     var onValue: ((LiveValue) -> Void)?
     var onTick: ((TickRow) -> Void)?
 
@@ -126,14 +135,26 @@ final class Sampler {
                     response = try await elm.send(request, timeout: 1.0)
                 } catch {
                     for def in defs { bumpStrike(def.id) }
+                    try? await Task.sleep(nanoseconds: interQueryGapNs)
                     continue
                 }
+                // Inter-query settle gap (see `interQueryGapNs` comment).
+                try? await Task.sleep(nanoseconds: interQueryGapNs)
                 let normalized = response.uppercased()
                     .replacingOccurrences(of: " ", with: "")
                     .replacingOccurrences(of: "\n", with: "")
                     .replacingOccurrences(of: "\r", with: "")
                 if normalized.contains("NODATA") {
                     NSLog("[Sampler] \(request) → NO DATA (defs: \(defs.map { $0.id }))")
+                    for def in defs { bumpStrike(def.id) }
+                    continue
+                }
+                // ELM emits STOPPED when a previous query was interrupted
+                // by the next command arriving too fast. We've added the
+                // inter-query gap above to prevent this, but log + bump
+                // on the way through so accidental occurrences are visible.
+                if normalized.contains("STOPPED") {
+                    NSLog("[Sampler] \(request) → STOPPED (adapter overrun)")
                     for def in defs { bumpStrike(def.id) }
                     continue
                 }
