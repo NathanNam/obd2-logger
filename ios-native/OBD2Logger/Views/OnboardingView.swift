@@ -1,21 +1,29 @@
 import SwiftUI
 
-/// Two-step first-run onboarding:
+/// Three-step first-run onboarding:
 ///   1. Pick an owner name (used to namespace the data folder).
 ///   2. Pair an OBD2 BLE adapter and run ELM327 init against it.
+///   3. Add a vehicle (VIN auto-read + NHTSA decode pre-fill).
 ///
 /// Step 2 is a strict block — the app has no value without an adapter, so
-/// we don't let the user proceed to MainShell until the adapter is fully
+/// we don't let the user proceed past it until the adapter is fully
 /// initialized. The owner name is only persisted once step 2 succeeds, so
 /// killing the app mid-flow restarts at step 1.
+///
+/// Step 3 is skippable. If the user bails (or kills the app), onboarding
+/// is considered complete and the user lands on MainShell, where the
+/// empty Vehicle card prompts "Tap to add your car" — same destination,
+/// gentler fallback.
 struct OnboardingView: View {
     let elm: ELM327
     var settings = SettingsStore.shared
     var ble = BLEManager.shared
+    var vehicleStore = VehicleStore.shared
 
     enum Step {
         case name
         case pair
+        case vehicle
     }
 
     @State private var step: Step = .name
@@ -25,6 +33,8 @@ struct OnboardingView: View {
     @State private var showPicker = false
     @State private var pairing: Pairing = .idle
     @State private var pairError: String?
+
+    @State private var showAddVehicle = false
 
     /// Tracks the BLE/ELM init flow for the onboarding-pair step.
     enum Pairing: Equatable {
@@ -46,6 +56,8 @@ struct OnboardingView: View {
                     nameStep
                 case .pair:
                     pairStep
+                case .vehicle:
+                    vehicleStep
                 }
             }
             .padding(24)
@@ -55,6 +67,14 @@ struct OnboardingView: View {
             DevicePickerView { device in
                 Task { await connect(to: device) }
             }
+        }
+        .sheet(isPresented: $showAddVehicle) {
+            AddVehicleView(elm: elm, onSaved: {
+                // Vehicle saved → onboarding done. The sheet's own dismiss
+                // will close the form on top of us; we close onboarding
+                // shortly after so MainShell can take over.
+                onDone()
+            })
         }
     }
 
@@ -67,15 +87,32 @@ struct OnboardingView: View {
                 .foregroundStyle(.tertiary)
                 .textCase(.uppercase)
             Spacer()
-            stepDot(active: step == .name, done: step == .pair, label: "1")
-            Text("Name")
-                .font(.monoSmall)
-                .foregroundStyle(step == .name ? .primary : .secondary)
-            Rectangle().fill(Color.secondary.opacity(0.3)).frame(width: 16, height: 1)
-            stepDot(active: step == .pair, done: false, label: "2")
-            Text("Adapter")
-                .font(.monoSmall)
-                .foregroundStyle(step == .pair ? .primary : .tertiary)
+            stepDot(active: step == .name, done: step != .name, label: "1")
+            stepLabel("Name", for: .name)
+            connector
+            stepDot(active: step == .pair, done: step == .vehicle, label: "2")
+            stepLabel("Adapter", for: .pair)
+            connector
+            stepDot(active: step == .vehicle, done: false, label: "3")
+            stepLabel("Vehicle", for: .vehicle)
+        }
+    }
+
+    private var connector: some View {
+        Rectangle().fill(Color.secondary.opacity(0.3)).frame(width: 12, height: 1)
+    }
+
+    @ViewBuilder
+    private func stepLabel(_ text: String, for forStep: Step) -> some View {
+        let order: [Step] = [.name, .pair, .vehicle]
+        let cur = order.firstIndex(of: step) ?? 0
+        let target = order.firstIndex(of: forStep) ?? 0
+        if step == forStep {
+            Text(text).font(.monoSmall).foregroundStyle(.primary)
+        } else if target < cur {
+            Text(text).font(.monoSmall).foregroundStyle(.secondary)
+        } else {
+            Text(text).font(.monoSmall).foregroundStyle(.tertiary)
         }
     }
 
@@ -176,12 +213,15 @@ struct OnboardingView: View {
                 Spacer()
 
                 if case .ready = pairing {
-                    Button("Done") {
+                    Button("Next") {
                         // Persist owner only after the adapter is confirmed
                         // working — half-finished onboarding shouldn't leave
-                        // a name behind in settings.
+                        // a name behind in settings. From here on, the user
+                        // is committed; if they bail out of step 3 we still
+                        // call onDone() and they land on MainShell.
                         settings.owner = pendingOwner
-                        onDone()
+                        vehicleStore.reload(owner: pendingOwner)
+                        step = .vehicle
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
@@ -203,6 +243,47 @@ struct OnboardingView: View {
         case .idle: return "Scan for adapter"
         case .connecting, .initializing: return "Working…"
         case .ready: return "Done"
+        }
+    }
+
+    // MARK: - Step 3: add vehicle
+
+    private var vehicleStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Add your car")
+                .font(.stepTitle)
+            Text("With the adapter connected, the app can read your VIN over OBD2 and decode year, make, model, and trim from the free NHTSA vPIC service. You can edit any field before saving.")
+                .foregroundStyle(.secondary)
+
+            if !vehicleStore.vehicles.isEmpty {
+                // The user already saved a vehicle in this onboarding pass
+                // (e.g. they hit Add, saved, then re-opened the form). Show
+                // a confirmation so the flow has a clean exit.
+                HStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Saved: \(vehicleStore.vehicles.first?.displayName ?? "your vehicle")")
+                        .font(.bodyText)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            VStack(spacing: 8) {
+                Button(vehicleStore.vehicles.isEmpty ? "Add vehicle" : "Add another") {
+                    showAddVehicle = true
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .frame(maxWidth: .infinity)
+
+                Button(vehicleStore.vehicles.isEmpty ? "Skip for now" : "Done") {
+                    onDone()
+                }
+                .buttonStyle(.borderless)
+                .controlSize(.small)
+            }
         }
     }
 

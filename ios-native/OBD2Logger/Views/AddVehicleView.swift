@@ -2,6 +2,11 @@ import SwiftUI
 
 struct AddVehicleView: View {
     let elm: ELM327
+    /// Optional callback fired right after a vehicle is successfully saved
+    /// (and before the sheet dismisses itself). Onboarding uses this to
+    /// know when its third step is complete.
+    var onSaved: (() -> Void)? = nil
+
     @Environment(\.dismiss) private var dismiss
     var settings = SettingsStore.shared
     var profileRegistry = ProfileRegistry.shared
@@ -182,6 +187,7 @@ struct AddVehicleView: View {
         do {
             try vehicleStore.save(vehicle)
             settings.activeVehicleSlug = vehicle.slug
+            onSaved?()
             dismiss()
         } catch let err {
             error = err.localizedDescription
