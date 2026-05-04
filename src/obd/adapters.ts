@@ -15,22 +15,48 @@ export const KNOWN_OBD_SERVICE_UUIDS: BluetoothServiceUUID[] = [
   "00001101-0000-1000-8000-00805f9b34fb",   // Bluetooth Classic SPP UUID (some hybrid adapters expose it on BLE)
 ];
 
+/// Common name prefixes that BLE OBD2 adapters advertise. Many adapters
+/// (Veepeak in particular) don't include their service UUIDs in the BLE
+/// advertisement packet — only the local name — so service-UUID-only
+/// filters miss them. Pairing name and service filters in the picker
+/// gives us both code paths.
+const KNOWN_OBD_NAME_PREFIXES: string[] = [
+  "VEEPEAK",
+  "OBDII",
+  "OBD2",
+  "OBDPro",
+  "OBDLink",
+  "vLinker",
+  "VLink",
+  "IOS-Vlink",
+  "iCar",
+  "Carista",
+  "VL-",
+  "ELM",
+];
+
 export function buildRequestDeviceOptions(): RequestDeviceOptions {
-  // Filter the picker to devices that advertise one of the known OBD2
-  // service UUIDs. Earlier we used `acceptAllDevices: true` to be tolerant
-  // of inconsistent adapter *names*, but Chrome's macOS implementation of
-  // `acceptAllDevices` is unreliable for devices that don't broadcast rich
-  // advertisement metadata — Veepeak units in particular often don't show
-  // up at all in the picker even when chrome://bluetooth-internals proves
-  // Chrome has seen them advertise. Service-UUID filters use a different
-  // scan code path and reliably surface those devices. This is also what
-  // CoreBluetooth on iOS uses (`scanForPeripherals(withServices: ...)`).
+  // Two parallel filter strategies, OR'd by the picker:
+  //   • By advertised name prefix — catches Veepeak units that broadcast
+  //     "VEEPEAK" but don't include their service UUIDs in the BLE
+  //     advertisement packet (a real and common Veepeak quirk).
+  //   • By advertised service UUID — catches adapters that DO advertise
+  //     their service UUIDs, including ones whose names we haven't yet
+  //     enumerated.
   //
-  // The downside is an OBD2 adapter that doesn't include any service UUID
-  // in its advertisement packet would not appear here. If you encounter
-  // that, add the adapter's service UUID to KNOWN_OBD_SERVICE_UUIDS above.
+  // Earlier iterations tried `acceptAllDevices: true` (Chrome on macOS
+  // unreliably surfaced Veepeaks even with that flag) and service-only
+  // filters (missed Veepeaks because the FFF0 service is post-connect,
+  // not advertised). The combined filter list works in both cases.
+  //
+  // If a user reports a new adapter not appearing, add its name prefix
+  // to KNOWN_OBD_NAME_PREFIXES or its service UUID to
+  // KNOWN_OBD_SERVICE_UUIDS — whichever the device actually advertises.
   return {
-    filters: KNOWN_OBD_SERVICE_UUIDS.map((service) => ({ services: [service] })),
+    filters: [
+      ...KNOWN_OBD_NAME_PREFIXES.map((namePrefix) => ({ namePrefix })),
+      ...KNOWN_OBD_SERVICE_UUIDS.map((service) => ({ services: [service] })),
+    ],
     optionalServices: KNOWN_OBD_SERVICE_UUIDS,
   };
 }
