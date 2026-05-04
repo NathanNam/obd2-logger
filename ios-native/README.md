@@ -2,6 +2,8 @@
 
 Native Swift / SwiftUI iOS app, targeting iOS 17+. Sibling of the web app at the repo root, sharing JSON profile files (bundled into both via `src/profiles/builtin/`).
 
+**Status (2026-05-04):** the iOS port has reached **data parity** with the web app — verified against a 2020 Lexus RX 450hL via back-to-back drives on the same Veepeak adapter. Both apps now capture the same ~40 PIDs at ~99% per-tick coverage, including multi-frame Mode 21 hybrid PIDs (HV pack voltage, MG torques, battery cell-block temperatures).
+
 ## Why a separate native app
 
 The web build can't run continuously in the background on iOS — WKWebView's JavaScript runtime is suspended within seconds of backgrounding, which kills the OBD2 sampler timer. Going native solves it cleanly: a Swift sampler can keep polling the adapter while the user has Google Maps in the foreground.
@@ -29,7 +31,7 @@ The project signs against Apple Developer team `794FX757KP` automatically. Bundl
 | 4. VIN + discovery | ✅ | Mode 09 PID 02 + Mode 01 supported-PID enumeration + profile probe |
 | 5. Sampler + CSV | ✅ | Tick-driven sampler, CSV writer to `Documents/`, `sessions.jsonl` |
 | 6. SwiftUI screens | ✅ | Onboarding, vehicle manager, connection, logging controls, live readout, sessions list |
-| 7. Background BLE | ✅ | `bluetooth-central` + `audio` modes + silent audio session |
+| 7. Background BLE | ✅ | `bluetooth-central` + `location` background modes (location used for keep-alive only — Apple-sanctioned trip-tracking pattern, no GPS data is logged) |
 | 8. TestFlight | ✅ (instructions) | See "Distributing via TestFlight" below |
 
 ## Layout
