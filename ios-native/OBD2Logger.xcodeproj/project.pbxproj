@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		06CD21620961AC904915C5E0 /* VehicleCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0230F8E4A2B3254B8602F038 /* VehicleCardView.swift */; };
 		08E5F5AFF32188DE35000EBA /* AddVehicleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33D1CE8428B1971BC15E8039 /* AddVehicleView.swift */; };
 		0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5E1FEEF3F1957049703A731 /* Vehicle.swift */; };
 		100ECA5F27FBA097AA0B3FC6 /* StandardPids.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EDDFD70B112D737500F7D9C /* StandardPids.swift */; };
@@ -49,6 +50,7 @@
 
 /* Begin PBXFileReference section */
 		01BD518F24B371A9D26E6985 /* KnownServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnownServices.swift; sourceTree = "<group>"; };
+		0230F8E4A2B3254B8602F038 /* VehicleCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleCardView.swift; sourceTree = "<group>"; };
 		0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingSession.swift; sourceTree = "<group>"; };
 		13A7FD01EB1974AFF94D9B7C /* SessionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecord.swift; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 				172025B3D025651AEA46C425 /* MainShellView.swift */,
 				0851E41ABA2FE1AB064CA7B8 /* OnboardingView.swift */,
 				B942AACBC4E12924F1201AC0 /* SessionsListView.swift */,
+				0230F8E4A2B3254B8602F038 /* VehicleCardView.swift */,
 				78BB30FEF564D12F7F743FA9 /* VehicleManagerView.swift */,
 			);
 			path = Views;
@@ -321,6 +324,7 @@
 				100ECA5F27FBA097AA0B3FC6 /* StandardPids.swift in Sources */,
 				8D356E578CCDE1F1918E8625 /* VINReader.swift in Sources */,
 				0958AED18AC406F2A58D069C /* Vehicle.swift in Sources */,
+				06CD21620961AC904915C5E0 /* VehicleCardView.swift in Sources */,
 				5E395A763AB18B13A8E91931 /* VehicleManagerView.swift in Sources */,
 				3D9F755DD580A55313653862 /* VehicleStore.swift in Sources */,
 			);

@@ -83,22 +83,25 @@ struct ConnectionView: View {
     private var connectionButton: some View {
         switch ble.connectionState {
         case .idle, .error:
-            Button("Connect adapter…") {
+            Button("Connect") {
                 statusError = nil
                 showPicker = true
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.small)
         case .scanning, .connecting, .discovering:
             Button("Cancel") {
                 ble.disconnect()
             }
             .buttonStyle(.bordered)
+            .controlSize(.small)
         case .connected:
             Button("Disconnect") {
                 elm.detach()
                 ble.disconnect()
             }
             .buttonStyle(.bordered)
+            .controlSize(.small)
         }
     }
 
@@ -115,7 +118,7 @@ struct ConnectionView: View {
 
     private var stateSubtitle: String {
         switch ble.connectionState {
-        case .idle: return "Tap Connect adapter to start."
+        case .idle: return "Tap Connect to start."
         case .scanning: return "Looking for nearby OBD2 devices."
         case .connecting: return "Negotiating GATT…"
         case .discovering: return "Discovering services and characteristics…"
