@@ -38,6 +38,14 @@ final class ELM327 {
     /// Optional timeout task tied to the in-flight command.
     private var timeoutTask: Task<Void, Never>?
 
+    /// Demo mode: short-circuit `send()` to return canned ELM responses
+    /// instead of actually talking to a BLE adapter. Derived from
+    /// `BLEManager.shared.demoMode` so the two never drift apart on
+    /// reconnects — the user (or App Reviewer) flips the flag once via
+    /// the "Try demo mode" link in onboarding, and tapping Disconnect
+    /// later flips it back via `BLEManager.disconnect()`.
+    var demoMode: Bool { ble.demoMode }
+
     init() {
         self.ble = BLEManager.shared
     }
@@ -91,6 +99,20 @@ final class ELM327 {
     /// Send a command and await the framed response (everything before the
     /// next `>` prompt, with `\r\n` whitespace trimmed).
     func send(_ command: String, timeout: TimeInterval = 6.0) async throws -> String {
+        if demoMode {
+            recordLog(.tx, command)
+            // Tiny simulated latency so the UI updates feel real.
+            try? await Task.sleep(nanoseconds: 30_000_000)
+            let raw = DemoELMResponses.response(for: command)
+            // Mirror the framing the real path produces: trim outer whitespace
+            // and replace \r with \n so consume() / decoders see the same shape.
+            let framed = raw
+                .replacingOccurrences(of: ">", with: "")
+                .replacingOccurrences(of: "\r", with: "\n")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            recordLog(.rx, framed)
+            return framed
+        }
         if inFlight != nil { throw ELMError.busy }
         let framed = command + "\r"
         guard let outbound = framed.data(using: .ascii) else {

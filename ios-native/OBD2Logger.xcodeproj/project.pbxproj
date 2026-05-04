@@ -44,6 +44,7 @@
 		E4DA988851EFF23937C0B2CB /* NHTSAClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3312A28E1940E4E09D1449B4 /* NHTSAClient.swift */; };
 		E8FB91515FED7E7E84187EC5 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85168347A0F227C8309DE3DC /* Assets.xcassets */; };
 		EA82CA81E4FADF0FF4B6CA3C /* HexParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 278693B6C4C85FF430EE4CC7 /* HexParsing.swift */; };
+		EE754EB9E0CF84E3E34E83AE /* DemoELMResponses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AB3B96373245CECF6A3368 /* DemoELMResponses.swift */; };
 		F22331DF14B287C5BC8BAE4C /* RegistryBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2944D63C122E84ABC1A07D2F /* RegistryBuilder.swift */; };
 		F80D5B1D1D53F61B4958ABF8 /* KnownServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01BD518F24B371A9D26E6985 /* KnownServices.swift */; };
 		FB22B5DEB4C3DC17FEC8D3B4 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F68C7CAF7FCF43DEB5B45E2 /* SettingsStore.swift */; };
@@ -74,6 +75,7 @@
 		71041E5EB030CA9C467F0BCF /* VINReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VINReader.swift; sourceTree = "<group>"; };
 		726CD6FAAC0FF8E87514746E /* StandardPIDDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StandardPIDDiscovery.swift; sourceTree = "<group>"; };
 		78BB30FEF564D12F7F743FA9 /* VehicleManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleManagerView.swift; sourceTree = "<group>"; };
+		80AB3B96373245CECF6A3368 /* DemoELMResponses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoELMResponses.swift; sourceTree = "<group>"; };
 		82C9EF6383420163BAABD158 /* LiveReadoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveReadoutView.swift; sourceTree = "<group>"; };
 		85168347A0F227C8309DE3DC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8BF2A12C45554479FD129D85 /* ProfileRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileRegistry.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 		5AF851D9E2E66A5B3A6F740C /* OBD2 */ = {
 			isa = PBXGroup;
 			children = (
+				80AB3B96373245CECF6A3368 /* DemoELMResponses.swift */,
 				D1D0BAD05340E5D8270FDC4D /* ECULiveness.swift */,
 				278693B6C4C85FF430EE4CC7 /* HexParsing.swift */,
 				0E1B39CE97B4BE8C02AABE51 /* LoggingSession.swift */,
@@ -300,6 +303,7 @@
 				7197636607CE9B7788273A1A /* CSVWriter.swift in Sources */,
 				1D82AD8BD2858E4E8341AFC8 /* ConnectionView.swift in Sources */,
 				AF00DA254BD09E48B5A32CCE /* ContentView.swift in Sources */,
+				EE754EB9E0CF84E3E34E83AE /* DemoELMResponses.swift in Sources */,
 				1B9395F68B8969D469264288 /* DevicePickerView.swift in Sources */,
 				B2B33056EDF54C41E99035C2 /* ECULiveness.swift in Sources */,
 				9179F3A983449116651A55CA /* ELM327.swift in Sources */,
