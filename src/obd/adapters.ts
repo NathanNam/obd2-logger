@@ -16,13 +16,21 @@ export const KNOWN_OBD_SERVICE_UUIDS: BluetoothServiceUUID[] = [
 ];
 
 export function buildRequestDeviceOptions(): RequestDeviceOptions {
-  // Show every nearby BLE device — adapter names vary widely (Veepeak units
-  // alone have shipped as "OBDII", "IOS-Vlink", "OBDPro", etc.) and a
-  // permissive picker is friendlier than guessing prefixes. The user picks;
-  // we then probe the GATT for one of the known service UUIDs (and fall back
-  // to scanning all primary services if none match).
+  // Filter the picker to devices that advertise one of the known OBD2
+  // service UUIDs. Earlier we used `acceptAllDevices: true` to be tolerant
+  // of inconsistent adapter *names*, but Chrome's macOS implementation of
+  // `acceptAllDevices` is unreliable for devices that don't broadcast rich
+  // advertisement metadata — Veepeak units in particular often don't show
+  // up at all in the picker even when chrome://bluetooth-internals proves
+  // Chrome has seen them advertise. Service-UUID filters use a different
+  // scan code path and reliably surface those devices. This is also what
+  // CoreBluetooth on iOS uses (`scanForPeripherals(withServices: ...)`).
+  //
+  // The downside is an OBD2 adapter that doesn't include any service UUID
+  // in its advertisement packet would not appear here. If you encounter
+  // that, add the adapter's service UUID to KNOWN_OBD_SERVICE_UUIDS above.
   return {
-    acceptAllDevices: true,
+    filters: KNOWN_OBD_SERVICE_UUIDS.map((service) => ({ services: [service] })),
     optionalServices: KNOWN_OBD_SERVICE_UUIDS,
   };
 }
