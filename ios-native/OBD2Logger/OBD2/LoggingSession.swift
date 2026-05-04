@@ -51,7 +51,17 @@ final class LoggingSession {
         sampleRateHz: Double,
         rawMode: Bool
     ) async {
-        guard state == .idle else { return }
+        // Allow re-entry from .error too — when the ECU liveness check
+        // fails, cleanup() preserves .error so the UI can show the message,
+        // and the user is expected to fix the car state (e.g. push-start
+        // to READY) and tap Start logging again. Without this, the second
+        // tap was a no-op and required terminating the app to recover.
+        switch state {
+        case .preparing, .logging:
+            return
+        case .idle, .error:
+            break
+        }
         self.elm = elm
         self.profile = profile
         self.vehicle = vehicle
