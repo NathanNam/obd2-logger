@@ -23,7 +23,7 @@ struct MainShellView: View {
                     // matters. Vehicle + Logging follow.
                     ConnectionView(elm: elm)
 
-                    VehicleManagerView(elm: elm)
+                    VehicleCardView(elm: elm)
 
                     LoggingControlsView(elm: elm)
 
