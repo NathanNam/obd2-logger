@@ -50,7 +50,7 @@ npm run preview
 
 A separate native Swift / SwiftUI app targeting iOS 17+ lives in [`ios-native/`](./ios-native). It uses the same JSON profiles bundled into this repo as the web app, but reimplements the OBD2 stack on top of `CoreBluetooth` so it can keep logging in the background while the user has Google Maps (or any other app) in the foreground — something the web/WebView path can't do because iOS suspends WebKit JavaScript when backgrounded. As of 2026-05-04, the iOS port has **data parity** with the web app — verified against a 2020 Lexus RX 450hL with the same Veepeak adapter, both apps capture ~40 PIDs at ~99% per-tick coverage. See `ios-native/README.md` for build instructions and [`CHANGELOG.md`](./CHANGELOG.md) for the parity-milestone bug list.
 
-<p align="center"><img src="examples/obd2-logger-ios.png" alt="iOS app — same Lexus, multi-ECU sampling with ATSH addressing, 46 PIDs in the Live readout" width="360"></p>
+<p align="center"><img src="examples/obd2-logger-ios.png" alt="iOS app mid-session — same 2020 Lexus RX 450hL, 42 PIDs streaming in the categorized Live readout, vehicle card collapsed, location-mode background keep-alive" width="360"></p>
 
 A previous Capacitor experiment in `ios/` was removed in favor of going pure-native; the WKWebView's JS pause on backgrounding made continuous BLE logging impossible without hacks.
 
