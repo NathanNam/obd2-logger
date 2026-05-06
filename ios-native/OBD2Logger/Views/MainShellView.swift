@@ -31,6 +31,8 @@ struct MainShellView: View {
 
                     LoggingControlsView(elm: elm)
 
+                    TripCardView()
+
                     LiveReadoutView()
 
                     SessionsListView()
