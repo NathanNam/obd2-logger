@@ -26,6 +26,16 @@ final class LocationKeepAlive: NSObject, CLLocationManagerDelegate {
     private(set) var lastLocation: CLLocation?
     private(set) var lastError: String?
 
+    /// Cumulative distance (meters) since the most recent `start()`. Surfaced
+    /// in `TripCardView` so the user sees how far they've driven during a
+    /// session. Resets at every new session.
+    private(set) var tripDistanceMeters: Double = 0
+    /// Most recent ground speed (meters/second) reported by the GPS. nil if
+    /// no fix yet, or if iOS reports negative speed (= speed unavailable).
+    private(set) var currentSpeedMps: Double?
+
+    private var previousLocation: CLLocation?
+
     override init() {
         super.init()
         manager.delegate = self
@@ -57,6 +67,10 @@ final class LocationKeepAlive: NSObject, CLLocationManagerDelegate {
         default:
             break
         }
+        // Reset trip stats so each session starts at zero.
+        tripDistanceMeters = 0
+        previousLocation = nil
+        currentSpeedMps = nil
         manager.startUpdatingLocation()
         isActive = true
     }
@@ -72,7 +86,22 @@ final class LocationKeepAlive: NSObject, CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let latest = locations.last else { return }
         Task { @MainActor in
+            // Accumulate trip distance from the previous fix to this one.
+            // Only count fixes with reasonable accuracy and a non-trivial
+            // delta, so GPS jitter at red lights doesn't fake a moving
+            // vehicle.
+            if let prev = self.previousLocation {
+                let delta = latest.distance(from: prev)
+                let goodAccuracy = latest.horizontalAccuracy >= 0 && latest.horizontalAccuracy < 30
+                let realMovement = delta > 5
+                if goodAccuracy && realMovement {
+                    self.tripDistanceMeters += delta
+                }
+            }
+            self.previousLocation = latest
             self.lastLocation = latest
+            // CLLocation.speed is < 0 when the OS can't determine speed.
+            self.currentSpeedMps = latest.speed >= 0 ? latest.speed : nil
         }
     }
 
