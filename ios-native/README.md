@@ -2,7 +2,7 @@
 
 Native Swift / SwiftUI iOS app, targeting iOS 17+. Sibling of the web app at the repo root, sharing JSON profile files (bundled into both via `src/profiles/builtin/`).
 
-**Status (2026-05-04):** the iOS port has reached **data parity** with the web app — verified against a 2020 Lexus RX 450hL via back-to-back drives on the same Veepeak adapter. Both apps now capture the same ~40 PIDs at ~99% per-tick coverage, including multi-frame Mode 21 hybrid PIDs (HV pack voltage, MG torques, battery cell-block temperatures).
+**Status (2026-05-06):** v1.0.0 is live on the App Store: <https://apps.apple.com/us/app/obd2-logger/id6766004425>. The iOS port reached data parity with the web app on 2026-05-04 — verified against a 2020 Lexus RX 450hL via back-to-back drives on the same Veepeak adapter. Both apps capture the same ~40 PIDs at ~99% per-tick coverage, including multi-frame Mode 21 hybrid PIDs (HV pack voltage, MG torques, battery cell-block temperatures).
 
 ## Why a separate native app
 
