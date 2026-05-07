@@ -2,7 +2,17 @@
 
 A browser-based data logger for the OBD2 port. Connect a Bluetooth (BLE) OBD2 adapter, pick a folder on your machine, and stream comprehensive vehicle telemetry — including manufacturer-specific data on profiled vehicles — straight to per-vehicle CSV files. No backend, no cloud, no accounts.
 
-**Try it live:** <https://obd2-logger-production.up.railway.app/> — open in Chrome or Edge desktop. All data still lives only on your machine; the hosted version just delivers the static bundle.
+**iPhone:** [OBD2 Logger on the App Store](https://apps.apple.com/us/app/obd2-logger/id6766004425) (free, iOS 17+).
+
+<p align="center">
+  <a href="https://apps.apple.com/us/app/obd2-logger/id6766004425">
+    <img src="examples/app-store-qr.png" alt="QR code linking to OBD2 Logger on the App Store" width="200">
+  </a>
+  <br>
+  <em>Scan with your iPhone camera to install</em>
+</p>
+
+**Web (Chrome / Edge desktop):** <https://obd2-logger-production.up.railway.app/> — all data still lives only on your machine; the hosted version just delivers the static bundle.
 
 ![Web app live readout — 2020 Lexus RX 450hL with 44 PIDs across Engine / Hybrid / Battery / Emissions / Diagnostics](examples/obd2-logger-webapp.png)
 
