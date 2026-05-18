@@ -1,0 +1,171 @@
+{
+  "profile_id": "toyota-rav4-hybrid-2019plus",
+  "profile_version": "0.1.0-experimental",
+  "display_name": "Toyota RAV4 Hybrid / Prime (2019+) — EXPERIMENTAL",
+  "description": "Best-effort Mode 21 hybrid coverage for the 5th-generation RAV4 Hybrid (XA50, 2019+) and RAV4 Prime PHEV (2021+). Both share the TNGA-K platform and THS-II hybrid drivetrain with the 2020 Lexus RX 450h/450hL, so this profile inherits the high-confidence hybrid PIDs validated against Nathan's RX 450hL: MG1/MG2/MGR torques (PIDs 61/62/63), HV pack voltage (PID 98), and four battery cell-block temperatures (PID 95). Includes additional candidate PIDs from the generic-toyota-hybrid profile (SOC real/display, MG RPMs) that may or may not respond on this platform — they're auto-demoted at probe time if they don't. UNVALIDATED on real RAV4 hardware; treat as a starting point and run a held-state PID sweep to confirm.",
+  "vehicle_match": {
+    "make": "Toyota",
+    "models": ["RAV4", "RAV4 Hybrid", "RAV4 Prime"],
+    "year_min": 2019,
+    "year_max": 2026
+  },
+  "ecus": {
+    "engine":             { "request_header": "7E0", "response_header": "7E8" },
+    "hybrid_controller":  { "request_header": "7E2", "response_header": "7EA" }
+  },
+  "pids": [
+    {
+      "id": "mg1_torque",
+      "display_name": "MG1 torque",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "61",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    },
+    {
+      "id": "mg2_torque",
+      "display_name": "MG2 torque",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "62",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    },
+    {
+      "id": "mgr_torque",
+      "display_name": "MGR torque (rear, AWD only)",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "63",
+      "unit": "Nm",
+      "formula": "((D*256+E)-32768)/8",
+      "category": "hybrid",
+      "min": -400,
+      "max": 400
+    },
+    {
+      "id": "mg1_rpm",
+      "display_name": "MG1 RPM",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "8B",
+      "unit": "rpm",
+      "formula": "(A*256+B)-32768",
+      "category": "hybrid"
+    },
+    {
+      "id": "mg2_rpm",
+      "display_name": "MG2 RPM",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "8C",
+      "unit": "rpm",
+      "formula": "(A*256+B)-32768",
+      "category": "hybrid"
+    },
+    {
+      "id": "hv_voltage",
+      "display_name": "HV pack voltage",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "98",
+      "unit": "V",
+      "formula": "(A*256+B)/100",
+      "category": "battery",
+      "min": 200,
+      "max": 400
+    },
+    {
+      "id": "battery_temp_1",
+      "display_name": "Battery temp 1",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "A",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "battery_temp_2",
+      "display_name": "Battery temp 2",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "B",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "battery_temp_3",
+      "display_name": "Battery temp 3",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "C",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "battery_temp_4",
+      "display_name": "Battery temp 4",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "95",
+      "unit": "°C",
+      "formula": "D",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "hv_soc_real",
+      "display_name": "HV SOC (real)",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "CE",
+      "unit": "%",
+      "formula": "A/2",
+      "category": "hybrid",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "id": "hv_soc_display",
+      "display_name": "HV SOC (display)",
+      "ecu": "hybrid_controller",
+      "mode": "21",
+      "pid": "CF",
+      "unit": "%",
+      "formula": "A/2",
+      "category": "hybrid",
+      "min": 0,
+      "max": 100
+    }
+  ],
+  "sources": [
+    "Inherited from src/profiles/builtin/lexus-rx450hl-2020.json (TNGA-K + THS-II platform sibling)",
+    "Inherited from src/profiles/builtin/generic-toyota-hybrid.json (community Toyota HSD PID list)",
+    "https://priuschat.com/threads/torque-pids-for-prius.85997/",
+    "https://www.rav4world.com/threads/rav4-hybrid-pid-list.295729/"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "(unvalidated)",
+      "date": "2026-05-02",
+      "notes": "Scaffolded for an upcoming rental trip — PIDs are inherited from the 2020 Lexus RX 450hL profile (validated TNGA-K + THS-II platform) and the generic-toyota-hybrid profile (community-curated). The high-confidence subset (PIDs 61/62/63/95/98 on hybrid_controller) should work on any TNGA-K THS-II vehicle. The medium-confidence subset (PIDs 8B/8C/CE/CF) is included because the generic Toyota hybrid community list reports them on Prius/Camry/RAV4 hybrids, but they're untested on TNGA-K specifically — the app's strike-rehab probe demotes any PID that returns NO_DATA after 3 consecutive ticks, so unsupported PIDs disappear automatically. PID 63 (MGR torque) will return NO_DATA on FWD (non-AWD) RAV4 Hybrid trims. To validate: capture a raw-mode session and check that PIDs 61/62/95/98 show varying responses across idle / cruise / accel windows, and that MG2 torque sign flips negative during regen braking."
+    }
+  ]
+}

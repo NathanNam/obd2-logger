@@ -1,0 +1,28 @@
+{
+  "profile_id": "toyota-rav4-2019plus",
+  "profile_version": "0.1.0-scaffold",
+  "display_name": "Toyota RAV4 (gas, 2019+) — SCAFFOLD",
+  "description": "Picker-friendly scaffold for the 5th-generation gas-only RAV4 (XA50, 2019+). 2.5L A25A-FKS engine, 8-speed direct-shift automatic, TNGA-K platform. No manufacturer-specific PIDs are shipped — standard Mode 01 PIDs (RPM, MAF, fuel trims, throttle, coolant temp, O2 sensors, catalyst temps, etc.) are auto-discovered by the app regardless of profile. The scaffold exists so the vehicle picker can match a gas RAV4 cleanly (instead of falling back to `generic-obd2`) and so future Mode 21 / Mode 22 sweeps can target the engine + transmission ECUs without re-declaration. Authoring custom PIDs requires an empirical sweep on the vehicle — see community-profiles/CONTRIBUTING.md.",
+  "vehicle_match": {
+    "make": "Toyota",
+    "models": ["RAV4"],
+    "year_min": 2019,
+    "year_max": 2026
+  },
+  "ecus": {
+    "engine":       { "request_header": "7E0", "response_header": "7E8" },
+    "transmission": { "request_header": "7E1", "response_header": "7E9" }
+  },
+  "pids": [],
+  "sources": [
+    "https://www.rav4world.com/threads/rav4-hybrid-pid-list.295729/ (gas variants discussed in same thread)",
+    "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated here"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "(unvalidated)",
+      "date": "2026-05-02",
+      "notes": "Scaffolded for an upcoming rental trip. No custom PIDs authored — the value-add over `generic-obd2` is purely the vehicle_match metadata (so the picker recommends this profile when adding a gas RAV4) and the transmission ECU declaration (so a future Mode 21/22 sweep can target 7E1 without editing the profile). Standard Mode 01 PIDs cover most of what's interesting on a non-hybrid TNGA-K vehicle. To extend this profile: run a Mode 21 sweep against engine (7E0) and transmission (7E1) during a varied-state drive, then identify any responding PIDs via byte-slice diff (see scripts/identify-mg-bytes.py)."
+    }
+  ]
+}
