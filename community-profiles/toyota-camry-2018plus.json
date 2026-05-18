@@ -1,0 +1,27 @@
+{
+  "profile_id": "toyota-camry-2018plus",
+  "profile_version": "0.1.0-scaffold",
+  "display_name": "Toyota Camry (gas, 2018-2024) — SCAFFOLD",
+  "description": "Picker-friendly scaffold for the 8th-generation gas Camry (XV70, 2018-2024). 2.5L A25A-FKS or 3.5L 2GR-FKS V6 engine, 8-speed automatic, TNGA-K platform. Note: the 9th-generation Camry (2025+) is hybrid-only; use `toyota-camry-hybrid-2018plus` for those. No manufacturer-specific PIDs are shipped — the value-add is vehicle_match metadata + transmission ECU declaration for future sweeps. Standard Mode 01 PIDs auto-discovered by the app cover RPM, MAF, fuel trims, throttle, coolant/intake temps, O2 sensors, catalyst temps, etc.",
+  "vehicle_match": {
+    "make": "Toyota",
+    "models": ["Camry"],
+    "year_min": 2018,
+    "year_max": 2024
+  },
+  "ecus": {
+    "engine":       { "request_header": "7E0", "response_header": "7E8" },
+    "transmission": { "request_header": "7E1", "response_header": "7E9" }
+  },
+  "pids": [],
+  "sources": [
+    "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated here"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "(unvalidated)",
+      "date": "2026-05-02",
+      "notes": "Scaffolded for an upcoming rental trip. No custom PIDs authored. Same rationale as toyota-rav4-2019plus: scaffold provides picker UX + transmission ECU declaration for sweep targeting. The TNGA-K platform shares the same diagnostic-bus layout as the RAV4 (7E0 engine / 7E1 transmission), so a sweep methodology developed against one vehicle should port to the other."
+    }
+  ]
+}

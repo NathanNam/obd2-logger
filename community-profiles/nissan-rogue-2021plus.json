@@ -1,0 +1,28 @@
+{
+  "profile_id": "nissan-rogue-2021plus",
+  "profile_version": "0.1.0-scaffold",
+  "display_name": "Nissan Rogue (gas, 2021+) — SCAFFOLD",
+  "description": "Picker-friendly scaffold for the 3rd-generation Nissan Rogue (T33, 2021+) on the Renault-Nissan CMF-CD2 platform. US-market trims use the 1.5L KR15DDT variable-compression turbo three-cylinder paired with a Jatco JF016E CVT. No manufacturer-specific PIDs are shipped — standard Mode 01 PIDs auto-discovered by the app cover the basics. The Rogue's interesting custom telemetry (CVT fluid temp, VC-Turbo compression ratio, knock counts) lives on Nissan's Mode 22 (UDS ReadDataByIdentifier) namespace, but specific DIDs vary by model year and require empirical sweeps to identify. Note: e-POWER hybrid variants (sold in US starting late 2025 as 'Rogue Plus') are not covered by this profile.",
+  "vehicle_match": {
+    "make": "Nissan",
+    "models": ["Rogue"],
+    "year_min": 2021,
+    "year_max": 2026
+  },
+  "ecus": {
+    "engine":       { "request_header": "7E0", "response_header": "7E8" },
+    "transmission": { "request_header": "7E1", "response_header": "7E9" }
+  },
+  "pids": [],
+  "sources": [
+    "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated here",
+    "Torque Pro PID database (Nissan section) — contains Mode 22 DIDs for older Rogues (T32 generation); T33 mapping unverified"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "(unvalidated)",
+      "date": "2026-05-02",
+      "notes": "Scaffolded for an upcoming rental trip. Nissan ECU layout for T33 is assumed: engine at 7E0/7E8 (standard OBD-II), transmission/CVT at 7E1/7E9. Some Nissan models route CVT diagnostics through alternate headers (7E3 or 18DAF110 for 29-bit) — if a 7E1 sweep returns NO_DATA across the board, retry with 7E3 or extended 29-bit addressing. To extend: run Mode 21 AND Mode 22 sweeps against both ECUs. Mode 22 is more common on modern Nissans (UDS-based diagnostic protocol). Promising candidates to look for in a Mode 22 sweep: CVT fluid temperature, CVT ratio/belt position, VC-Turbo current compression ratio, knock retard, ignition timing per cylinder."
+    }
+  ]
+}

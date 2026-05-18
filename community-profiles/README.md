@@ -14,15 +14,13 @@ You can also manually drop a `.json` file into **Files app → On My iPhone → 
 
 ## Available profiles
 
-> No community-contributed profiles yet. **Be the first** — see [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-When profiles land, this section will look like:
-
 | Profile | Vehicle match | Contributor | Last validated | File |
 |---|---|---|---|---|
-| `honda-civic-hybrid-2024` | Honda Civic Hybrid 2024+ | @example | 2026-XX-XX | [json](./honda-civic-hybrid-2024.json) |
-| `tesla-model-3` | Tesla Model 3 (2017+) | @example | 2026-XX-XX | [json](./tesla-model-3.json) |
-| `bmw-i3-rex` | BMW i3 REx (2014–2021) | @example | 2026-XX-XX | [json](./bmw-i3-rex.json) |
+| `toyota-rav4-hybrid-2019plus` | Toyota RAV4 Hybrid / Prime (2019+) | @NathanNam | unvalidated — inherited from `lexus-rx450hl-2020` (same TNGA-K + THS-II platform) | [json](./toyota-rav4-hybrid-2019plus.json) |
+| `toyota-rav4-2019plus` | Toyota RAV4 gas (2019+) | @NathanNam | scaffold only — relies on standard Mode 01 auto-discovery | [json](./toyota-rav4-2019plus.json) |
+| `toyota-camry-hybrid-2018plus` | Toyota Camry Hybrid (2018+) | @NathanNam | unvalidated — inherited from `lexus-rx450hl-2020` (same TNGA-K + THS-II platform, FWD-only) | [json](./toyota-camry-hybrid-2018plus.json) |
+| `toyota-camry-2018plus` | Toyota Camry gas (2018-2024) | @NathanNam | scaffold only — relies on standard Mode 01 auto-discovery | [json](./toyota-camry-2018plus.json) |
+| `nissan-rogue-2021plus` | Nissan Rogue gas (2021+) | @NathanNam | scaffold only — relies on standard Mode 01 auto-discovery | [json](./nissan-rogue-2021plus.json) |
 
 ## Profile authoring is hard
 
