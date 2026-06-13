@@ -2,7 +2,7 @@
   "profile_id": "toyota-rav4-2019plus",
   "profile_version": "0.1.0-scaffold",
   "display_name": "Toyota RAV4 (gas, 2019+) — SCAFFOLD",
-  "description": "Picker-friendly scaffold for the 5th-generation gas-only RAV4 (XA50, 2019+). 2.5L A25A-FKS engine, 8-speed direct-shift automatic, TNGA-K platform. No manufacturer-specific PIDs are shipped — standard Mode 01 PIDs (RPM, MAF, fuel trims, throttle, coolant temp, O2 sensors, catalyst temps, etc.) are auto-discovered by the app regardless of profile. The scaffold exists so the vehicle picker can match a gas RAV4 cleanly (instead of falling back to `generic-obd2`) and so future Mode 21 / Mode 22 sweeps can target the engine + transmission ECUs without re-declaration. Authoring custom PIDs requires an empirical sweep on the vehicle — see community-profiles/CONTRIBUTING.md.",
+  "description": "Picker-friendly scaffold for the 5th-generation gas-only RAV4 (XA50, 2019+). 2.5L A25A-FKS engine, 8-speed direct-shift automatic, TNGA-K platform. No manufacturer-specific PIDs are shipped — standard Mode 01 PIDs (RPM, MAF, fuel trims, throttle, coolant temp, O2 sensors, catalyst temps, etc.) are auto-discovered by the app regardless of profile. The single `rpm` entry below is a placeholder to satisfy the iOS importer's non-empty-pids requirement and is a redeclaration of the standard Mode 01 PID 0C (the sampler dedupes by (mode, pid) so this is a no-op against auto-discovery). The scaffold exists so the vehicle picker can match a gas RAV4 cleanly (instead of falling back to `generic-obd2`) and so future Mode 21 / Mode 22 sweeps can target the engine + transmission ECUs without re-declaration. Authoring custom PIDs requires an empirical sweep on the vehicle — see community-profiles/CONTRIBUTING.md.",
   "vehicle_match": {
     "make": "Toyota",
     "models": ["RAV4"],
@@ -13,7 +13,20 @@
     "engine":       { "request_header": "7E0", "response_header": "7E8" },
     "transmission": { "request_header": "7E1", "response_header": "7E9" }
   },
-  "pids": [],
+  "pids": [
+    {
+      "id": "rpm",
+      "display_name": "Engine RPM",
+      "ecu": "engine",
+      "mode": "01",
+      "pid": "0C",
+      "unit": "rpm",
+      "formula": "(A*256+B)/4",
+      "category": "engine",
+      "min": 0,
+      "max": 8000
+    }
+  ],
   "sources": [
     "https://www.rav4world.com/threads/rav4-hybrid-pid-list.295729/ (gas variants discussed in same thread)",
     "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated here"
