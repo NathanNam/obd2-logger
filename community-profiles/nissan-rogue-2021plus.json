@@ -2,7 +2,7 @@
   "profile_id": "nissan-rogue-2021plus",
   "profile_version": "0.1.0-scaffold",
   "display_name": "Nissan Rogue (gas, 2021+) — SCAFFOLD",
-  "description": "Picker-friendly scaffold for the 3rd-generation Nissan Rogue (T33, 2021+) on the Renault-Nissan CMF-CD2 platform. US-market trims use the 1.5L KR15DDT variable-compression turbo three-cylinder paired with a Jatco JF016E CVT. No manufacturer-specific PIDs are shipped — standard Mode 01 PIDs auto-discovered by the app cover the basics. The Rogue's interesting custom telemetry (CVT fluid temp, VC-Turbo compression ratio, knock counts) lives on Nissan's Mode 22 (UDS ReadDataByIdentifier) namespace, but specific DIDs vary by model year and require empirical sweeps to identify. Note: e-POWER hybrid variants (sold in US starting late 2025 as 'Rogue Plus') are not covered by this profile.",
+  "description": "Picker-friendly scaffold for the 3rd-generation Nissan Rogue (T33, 2021+) on the Renault-Nissan CMF-CD2 platform. US-market trims use the 1.5L KR15DDT variable-compression turbo three-cylinder paired with a Jatco JF016E CVT. No manufacturer-specific PIDs are shipped — standard Mode 01 PIDs auto-discovered by the app cover the basics. The single `rpm` entry below is a placeholder to satisfy the iOS importer's non-empty-pids requirement and is a redeclaration of the standard Mode 01 PID 0C (the sampler dedupes by (mode, pid) so this is a no-op against auto-discovery). The Rogue's interesting custom telemetry (CVT fluid temp, VC-Turbo compression ratio, knock counts) lives on Nissan's Mode 22 (UDS ReadDataByIdentifier) namespace, but specific DIDs vary by model year and require empirical sweeps to identify. Note: e-POWER hybrid variants (sold in US starting late 2025 as 'Rogue Plus') are not covered by this profile.",
   "vehicle_match": {
     "make": "Nissan",
     "models": ["Rogue"],
@@ -13,7 +13,20 @@
     "engine":       { "request_header": "7E0", "response_header": "7E8" },
     "transmission": { "request_header": "7E1", "response_header": "7E9" }
   },
-  "pids": [],
+  "pids": [
+    {
+      "id": "rpm",
+      "display_name": "Engine RPM",
+      "ecu": "engine",
+      "mode": "01",
+      "pid": "0C",
+      "unit": "rpm",
+      "formula": "(A*256+B)/4",
+      "category": "engine",
+      "min": 0,
+      "max": 8000
+    }
+  ],
   "sources": [
     "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated here",
     "Torque Pro PID database (Nissan section) — contains Mode 22 DIDs for older Rogues (T32 generation); T33 mapping unverified"
