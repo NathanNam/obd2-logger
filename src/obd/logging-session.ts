@@ -36,6 +36,7 @@ export class LoggingSession {
   private state: LoggingState = { kind: "idle" };
   private listeners = new Set<LoggingListener>();
   private valueListeners = new Set<(v: LiveValue) => void>();
+  private prepListeners = new Set<(p: SessionPrep | null) => void>();
   private sampler: Sampler | null = null;
   private writer: CsvWriter | null = null;
   private startMs = 0;
@@ -61,6 +62,32 @@ export class LoggingSession {
   onValue(l: (v: LiveValue) => void): () => void {
     this.valueListeners.add(l);
     return () => this.valueListeners.delete(l);
+  }
+
+  /** Live registry from the last prepareForVehicle / session start. The
+   * vehicle's persisted supportedXxxPids may be stale (set to [] after a
+   * Re-probe and not yet rewritten until the session completes), so views
+   * that want to display the "actually queried" PID set should read here,
+   * not from the vehicle record. */
+  getPrep(): SessionPrep | null {
+    return this.prep;
+  }
+
+  onPrep(l: (p: SessionPrep | null) => void): () => void {
+    this.prepListeners.add(l);
+    l(this.prep);
+    return () => this.prepListeners.delete(l);
+  }
+
+  private setPrep(p: SessionPrep | null): void {
+    this.prep = p;
+    for (const l of this.prepListeners) {
+      try {
+        l(p);
+      } catch {
+        // ignore
+      }
+    }
   }
 
   private setState(s: LoggingState): void {
@@ -146,11 +173,12 @@ export class LoggingSession {
       vehicle: updatedVehicle,
     });
     const enabledColumnIds = registry.filter((e) => e.enabled).map((e) => e.def.id);
-    this.prep = { registry, enabledColumnIds };
+    const prep: SessionPrep = { registry, enabledColumnIds };
+    this.setPrep(prep);
     this.vehicle = updatedVehicle;
     this.rootDir = opts.rootDir;
     this.setState({ kind: "idle" });
-    return this.prep;
+    return prep;
   }
 
   async start(opts: {
