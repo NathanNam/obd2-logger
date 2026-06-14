@@ -1,12 +1,14 @@
 import genericObd2 from "./builtin/generic-obd2.json";
 import genericToyotaHybrid from "./builtin/generic-toyota-hybrid.json";
 import lexusRx450hl2020 from "./builtin/lexus-rx450hl-2020.json";
+import kiaNiroHybrid2023plus from "./builtin/kia-niro-hybrid-2023plus.json";
 import type { Profile } from "./types";
 
 const BUILTIN: Profile[] = [
   genericObd2 as Profile,
   genericToyotaHybrid as Profile,
   lexusRx450hl2020 as Profile,
+  kiaNiroHybrid2023plus as Profile,
 ];
 
 let imported: Profile[] = [];
