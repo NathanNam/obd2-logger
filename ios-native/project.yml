@@ -40,3 +40,18 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"  # iPhone only — UI is portrait-only and tuned for phone widths
         SUPPORTS_MACCATALYST: NO
         CODE_SIGN_STYLE: Automatic
+schemes:
+  OBD2Logger:
+    build:
+      targets:
+        OBD2Logger: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
