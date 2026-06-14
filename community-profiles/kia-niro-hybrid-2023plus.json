@@ -1,0 +1,43 @@
+{
+  "profile_id": "kia-niro-hybrid-2023plus",
+  "profile_version": "0.1.0-scaffold",
+  "display_name": "Kia Niro Hybrid (2023+) — SCAFFOLD",
+  "description": "Scaffold for the 2nd-generation Kia Niro Hybrid (SG2, 2023+). 1.6L Smartstream Kappa II GDI engine paired with a 32 kW permanent-magnet synchronous motor sandwiched in a 6-speed DCT, fed by a 1.32 kWh Li-ion polymer HV pack. Architecture is a parallel hybrid (motor in the transmission), distinct from Toyota's HSD planetary split and from Hyundai-Kia's series-parallel HEVs of the prior generation. Mode 21 is uncommon on modern Hyundai-Kia; the interesting telemetry (SOC, HV pack V/I, motor torque, cell temps, regen power) lives on Mode 22 (UDS ReadDataByIdentifier) addressed to the BMS at 7E4/7EC and the HCU at 7E5/7ED. NO Mode 22 PIDs are authored yet — a sweep against this vehicle is required first. The single `rpm` entry below is a placeholder to satisfy the iOS importer's non-empty-pids requirement (the Sampler dedupes by (mode, pid), so it's a no-op against standard auto-discovery). The scaffold's value-add over `generic-obd2` is the vehicle_match metadata (picker recognizes the Niro) and the BMS + HCU ECU declarations (so a future sweep targets all three controllers without re-editing).",
+  "vehicle_match": {
+    "make": "Kia",
+    "models": ["Niro", "Niro Hybrid"],
+    "year_min": 2023,
+    "year_max": 2026
+  },
+  "ecus": {
+    "engine": { "request_header": "7E0", "response_header": "7E8" },
+    "bms":    { "request_header": "7E4", "response_header": "7EC" },
+    "hcu":    { "request_header": "7E5", "response_header": "7ED" }
+  },
+  "pids": [
+    {
+      "id": "rpm",
+      "display_name": "Engine RPM",
+      "ecu": "engine",
+      "mode": "01",
+      "pid": "0C",
+      "unit": "rpm",
+      "formula": "(A*256+B)/4",
+      "category": "engine",
+      "min": 0,
+      "max": 8000
+    }
+  ],
+  "sources": [
+    "Empirical capture against a 2026 Kia Niro LX Hybrid (Nathan's rental, VIN KNDCP3LE5T5337532): 3 raw-mode sessions on 2026-06-14 using the generic-obd2 fallback — confirmed the 39-PID standard Mode 01 surface listed in validated_against below.",
+    "BMS / HCU ECU addressing (7E4, 7E5) cross-checked from community Hyundai-Kia hybrid sources: EV Notify project, Torque Pro Kia/Hyundai DID database, and HybridKia / Niro forums. Addressing is consistent across the Hyundai-Kia hybrid lineup (Niro HEV, Kona HEV, Ioniq HEV, Sorento HEV) — model-specific DIDs differ, but ECU IDs are stable.",
+    "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated as profile PIDs"
+  ],
+  "validated_against": [
+    {
+      "vehicle": "2026 Kia Niro LX Hybrid (Nathan's rental, VIN KNDCP3LE5T5337532)",
+      "date": "2026-06-14",
+      "notes": "STANDARD PID SURFACE CONFIRMED (39 PIDs responding via generic-obd2 auto-discovery across 3 raw-mode sessions totalling ~17 minutes, ~326 rows): abs_evap_pressure, abs_load, abs_throttle_b, accel_pedal_d, accel_pedal_e, afr_command, ambient_temp, barometric, cat_temp_b1s1, control_module_v, coolant_temp, distance_since_clear, distance_with_mil, egr_command, egr_error, engine_load, evap_purge_cmd, fuel_level, fuel_rail_pressure, fuel_rate, fuel_system_status, fuel_type, intake_map, ltft_b1, ltft_b1b3_o2, maf, monitor_status, o2_b1s2, obd_standard, rel_throttle, rpm, run_time, speed, stft_b1, stft_b1b3_o2, throttle_actuator_cmd, throttle_pos, timing_advance, warmups_since_clear. HYBRID BEHAVIOR OBSERVED (without dedicated hybrid PIDs): clear ICE-cycling pattern in the longest session (raw__2026-06-14T00-20-15Z__0kspengc.csv, 257 rows) — rpm drops to 0 with fuel_rate=0 and engine_load=0 while speed remains 50-90 km/h (pure EV propulsion segments), interleaved with rpm=1700-2600 and fuel_rate=5-7 g/s (ICE-on segments for power assist or HV pack charging). Coolant temp climbs 70→97 °C across the session, confirming engine warm-up dynamics. The cycling pattern is signal enough to infer hybrid state but NOT enough to quantify SOC, motor power, or regen — those require Mode 22 sweeps on BMS (7E4) and HCU (7E5). UNRESOLVED / NEEDED NEXT: run the PID Sweep tool with Mode=22 against ECUs bms and hcu while the rental is still in hand. Promising Hyundai-Kia community-documented DIDs to look for in the sweep output: BMS DID 0x0101 (multi-byte response — should contain SOC, HV voltage, HV current, max/min cell V), BMS DID 0x0105 (cell temps + auxiliary). HCU DIDs vary by model and are less well documented — sweep the full 0x0100-0x01FF range. Then capture a varied-state raw session (idle / cruise / accel / regen / EV-only) and identify byte positions via scripts/identify-mg-bytes.py. Source files: raw__2026-06-14T00-19-46Z__xhrmsm0m.csv (11 PIDs, 20 rows), raw__2026-06-14T00-20-15Z__0kspengc.csv (39 PIDs, 257 rows — driving), raw__2026-06-14T00-44-32Z__d36vhm3b.csv (18 PIDs, 49 rows)."
+    }
+  ]
+}
