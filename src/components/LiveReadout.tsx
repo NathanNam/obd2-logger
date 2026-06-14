@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { logging } from "../obd/logging-session";
+import { logging, type SessionPrep } from "../obd/logging-session";
 import type { LiveValue } from "../obd/sampler";
 import { buildRegistry, type RegistryEntry } from "../obd/registry-builder";
 import { getProfile } from "../profiles/registry";
@@ -31,6 +31,7 @@ export function LiveReadout({ vehicle }: Props) {
   const [latest, setLatest] = useState<Record<string, number>>({});
   const historyRef = useRef<Record<string, number[]>>({});
   const [, forceRender] = useState(0);
+  const [livePrep, setLivePrep] = useState<SessionPrep | null>(logging.getPrep());
 
   useEffect(() => {
     historyRef.current = {};
@@ -50,7 +51,17 @@ export function LiveReadout({ vehicle }: Props) {
     };
   }, [vehicle]);
 
+  useEffect(() => {
+    // Track the session's actual registry — the vehicle prop's persisted
+    // supportedXxxPids may be stale until prepareForVehicle writes back.
+    return logging.onPrep(setLivePrep);
+  }, []);
+
   const registry = useMemo<RegistryEntry[]>(() => {
+    // Prefer the live session registry when available — it reflects the
+    // actual fresh probe results the Sampler is querying. Fall back to the
+    // vehicle's persisted cache for the "before logging starts" view.
+    if (livePrep) return livePrep.registry;
     if (!vehicle) return [];
     const profile = getProfile(vehicle.profileId);
     if (!profile) return [];
@@ -60,7 +71,7 @@ export function LiveReadout({ vehicle }: Props) {
       supportedProfilePids: vehicle.supportedProfilePids,
       vehicle,
     });
-  }, [vehicle]);
+  }, [vehicle, livePrep]);
 
   const grouped = useMemo(() => {
     const f = filter.trim().toLowerCase();
