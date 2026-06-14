@@ -178,6 +178,15 @@ export class Sampler {
       const ecu = this.opts.profile.ecus[entries[0].def.ecu];
       if (ecu) {
         await this.opts.elm.send(`ATSH${ecu.request_header}`, { timeoutMs: 800 }).catch(() => null);
+        // Modern UDS ECUs (Hyundai-Kia 2024+ confirmed) gate Mode 22 live-data
+        // DIDs behind the extended diagnostic session. Mirror the sweep fix:
+        // send 10 03 once per ECU per tick if any PID at this ECU uses Mode 22.
+        // Ignored response — if 1003 fails the queries return NRC and the
+        // demote/no-data logic handles it. Mode 21-only ECUs are unaffected.
+        const wantsMode22 = entries.some((e) => e.def.mode === "22");
+        if (wantsMode22) {
+          await this.opts.elm.send("1003", { timeoutMs: 1200 }).catch(() => null);
+        }
       }
       // Dedupe identical (mode, pid) queries within the group: e.g.
       // battery_temp_1..4 all read different bytes from the same PID 95

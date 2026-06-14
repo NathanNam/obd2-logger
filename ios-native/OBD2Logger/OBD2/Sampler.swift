@@ -128,6 +128,15 @@ final class Sampler {
         for (ecuName, groupPIDs) in groups {
             if let ecu = ecus[ecuName] {
                 _ = try? await elm.send("ATSH\(ecu.requestHeader)", timeout: 0.8)
+                // Modern UDS ECUs (Hyundai-Kia 2024+ confirmed) gate Mode 22
+                // live-data DIDs behind the extended diagnostic session. Mirror
+                // the web sweep/sampler fix: send 10 03 once per ECU per tick
+                // if any PID at this ECU uses Mode 22. Failure is ignored —
+                // unsupported DIDs fall through to the existing strike logic.
+                let wantsMode22 = groupPIDs.contains(where: { $0.mode == "22" })
+                if wantsMode22 {
+                    _ = try? await elm.send("1003", timeout: 1.2)
+                }
             }
             for (mode, pid, defs) in dedupeByQuery(groupPIDs) {
                 let request = mode + pid

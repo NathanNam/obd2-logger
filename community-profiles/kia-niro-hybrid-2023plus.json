@@ -28,7 +28,25 @@
       "category": "engine",
       "min": 0,
       "max": 8000
-    }
+    },
+    { "id": "bms_did_0101", "display_name": "BMS DID 0101 (raw)", "ecu": "bms", "mode": "22", "pid": "0101", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0102", "display_name": "BMS DID 0102 (raw)", "ecu": "bms", "mode": "22", "pid": "0102", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0103", "display_name": "BMS DID 0103 (raw)", "ecu": "bms", "mode": "22", "pid": "0103", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0104", "display_name": "BMS DID 0104 (raw)", "ecu": "bms", "mode": "22", "pid": "0104", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0105", "display_name": "BMS DID 0105 (raw)", "ecu": "bms", "mode": "22", "pid": "0105", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0106", "display_name": "BMS DID 0106 (raw)", "ecu": "bms", "mode": "22", "pid": "0106", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0107", "display_name": "BMS DID 0107 (raw)", "ecu": "bms", "mode": "22", "pid": "0107", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0108", "display_name": "BMS DID 0108 (raw)", "ecu": "bms", "mode": "22", "pid": "0108", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0110", "display_name": "BMS DID 0110 (raw)", "ecu": "bms", "mode": "22", "pid": "0110", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0111", "display_name": "BMS DID 0111 (raw)", "ecu": "bms", "mode": "22", "pid": "0111", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0112", "display_name": "BMS DID 0112 (raw)", "ecu": "bms", "mode": "22", "pid": "0112", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0114", "display_name": "BMS DID 0114 (raw)", "ecu": "bms", "mode": "22", "pid": "0114", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0130", "display_name": "BMS DID 0130 (raw)", "ecu": "bms", "mode": "22", "pid": "0130", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0131", "display_name": "BMS DID 0131 (raw)", "ecu": "bms", "mode": "22", "pid": "0131", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0132", "display_name": "BMS DID 0132 (raw)", "ecu": "bms", "mode": "22", "pid": "0132", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0133", "display_name": "BMS DID 0133 (raw)", "ecu": "bms", "mode": "22", "pid": "0133", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0134", "display_name": "BMS DID 0134 (raw)", "ecu": "bms", "mode": "22", "pid": "0134", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_01F2", "display_name": "BMS DID 01F2 (raw)", "ecu": "bms", "mode": "22", "pid": "01F2", "unit": "", "formula": "A", "category": "battery" }
   ],
   "sources": [
     "Empirical capture against a 2026 Kia Niro LX Hybrid (Nathan's rental): 3 raw-mode sessions on 2026-06-14 using the generic-obd2 fallback — confirmed the 39-PID standard Mode 01 surface listed in validated_against below.",
