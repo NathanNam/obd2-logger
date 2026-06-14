@@ -32,6 +32,7 @@ enum RegistryBuilder {
     ) -> [PidDef] {
         let disabled = Set(disabledPIDs)
         var entries: [PidDef] = []
+        var seenIds = Set<String>()
 
         for hex in supportedStandardPIDs {
             let upper = hex.uppercased()
@@ -39,13 +40,20 @@ enum RegistryBuilder {
             guard let def = StandardPids.get(upper) else { continue }
             if disabled.contains(def.id) { continue }
             entries.append(def)
+            seenIds.insert(def.id)
         }
 
+        // Dedupe by id: profile PIDs that redeclare a standard PID (e.g. an
+        // `rpm` placeholder added to satisfy the importer's non-empty-pids
+        // check) get dropped here. Otherwise the CSV writes two columns with
+        // the same name and the on-disk format becomes lossy.
         let profileSupported = Set(supportedProfilePIDs)
         for pid in profile.pids {
             if !profileSupported.contains(pid.id) { continue }
             if disabled.contains(pid.id) { continue }
+            if seenIds.contains(pid.id) { continue }
             entries.append(pid)
+            seenIds.insert(pid.id)
         }
 
         return entries.sorted { a, b in

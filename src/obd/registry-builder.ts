@@ -34,16 +34,24 @@ export function buildRegistry(opts: {
   const disabled = new Set(vehicle.disabledPids);
   const entries: RegistryEntry[] = [];
 
+  const seenIds = new Set<string>();
   for (const pid of supportedStandardPids) {
     if (BITMASK_PIDS.has(pid.toUpperCase())) continue;
     const def = getStandardPid(pid);
     if (!def) continue;
     entries.push({ def, source: "standard", enabled: !disabled.has(def.id) });
+    seenIds.add(def.id);
   }
 
+  // Dedupe by id: profile PIDs that redeclare a standard PID (e.g. an `rpm`
+  // placeholder added to satisfy the iOS importer's non-empty-pids check) get
+  // dropped here. Otherwise the CSV ends up with two identically named columns
+  // and downstream readers silently take whichever pandas/csv parses last.
   for (const pid of profile.pids) {
     if (!supportedProfilePids.includes(pid.id)) continue;
+    if (seenIds.has(pid.id)) continue;
     entries.push({ def: pid, source: "profile", enabled: !disabled.has(pid.id) });
+    seenIds.add(pid.id);
   }
 
   return entries.sort((a, b) => {

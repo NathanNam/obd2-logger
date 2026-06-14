@@ -17,18 +17,6 @@
     "hcu":    { "request_header": "7E5", "response_header": "7ED" }
   },
   "pids": [
-    {
-      "id": "rpm",
-      "display_name": "Engine RPM",
-      "ecu": "engine",
-      "mode": "01",
-      "pid": "0C",
-      "unit": "rpm",
-      "formula": "(A*256+B)/4",
-      "category": "engine",
-      "min": 0,
-      "max": 8000
-    },
     { "id": "bms_did_0101", "display_name": "BMS DID 0101 (raw)", "ecu": "bms", "mode": "22", "pid": "0101", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0102", "display_name": "BMS DID 0102 (raw)", "ecu": "bms", "mode": "22", "pid": "0102", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0103", "display_name": "BMS DID 0103 (raw)", "ecu": "bms", "mode": "22", "pid": "0103", "unit": "", "formula": "A", "category": "battery" },
