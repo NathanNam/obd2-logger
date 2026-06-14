@@ -132,3 +132,53 @@ Some vehicle communities have done significant PID research:
 - **Tesla**: limited; Tesla doesn't expose useful OBD2 in most models
 
 These are starting points for the *PID list*. You still need to validate each one against your specific vehicle.
+
+## Working with Mode 22 (UDS) vehicles
+
+Older manufacturer-specific data lives in **Mode 21** (single-byte PIDs, `21 XX`) — Toyota / Lexus use this heavily. Newer manufacturers (Hyundai-Kia 2018+, VW/Audi, modern Ford, etc.) have moved everything to **Mode 22** (UDS ReadDataByIdentifier with 2-byte DIDs, `22 XX XX`). The differences matter:
+
+### 1. Mode 22 DIDs are 2 bytes, not 1
+
+A Mode 21 sweep walks 256 values (`21 00` through `21 FF`). A Mode 22 sweep walks up to 65,536 (`22 0000` through `22 FFFF`). Sweeping the full 16-bit space is impractical (~5+ hours). The default sweep config walks `0x0100 – 0x01FF` because that's where Hyundai-Kia EVs historically put live BMS data — but **every manufacturer puts their live data in a different range**.
+
+If the default range returns all-NRC-31 (`requestOutOfRange`) responses on every PID, the ECU is alive and speaks Mode 22 but doesn't have any DIDs in that range. Probe other ranges in this rough order:
+
+- `0xF180 – 0xF1FF` — ISO 14229 standard identification DIDs (VIN at F190, software part numbers, ECU manufacturing dates). **Always start here** — if `F190` returns positive data, you've proven Mode 22 works on this ECU and can hunt for the proprietary live-data range.
+- `0x0100 – 0x01FF` — Hyundai-Kia BMS live data (EVs, HEVs).
+- `0xB000 – 0xB0FF`, `0x4000 – 0x40FF`, `0xC000 – 0xC0FF` — various manufacturer proprietary ranges; try them all.
+- `0x0000 – 0x00FF`, `0x0200 – 0x02FF`, `0x0500 – 0x05FF` — lower-likelihood but cheap to try.
+
+### 2. Extended diagnostic session may be required
+
+Modern UDS ECUs gate most live-data DIDs behind the **extended diagnostic session** (UDS service `10 03`). In the default session (`10 01`, the state at adapter power-on), only ISO-mandated identification DIDs (`F1xx`) are reachable. Without entering extended session, every Mode 22 query for live data returns NRC 31 — even though the ECU is right there responding.
+
+The sweep tool and the sampler both send `10 03` automatically before iterating Mode 22 PIDs on each ECU. If you ever see this pattern:
+
+- `F180 – F1FF` returns OK responses (identification works).
+- Every other range returns NRC 31 across every DID.
+
+…you're being session-gated. If our `1003` injection ever fails for an exotic ECU, you may need to extend the timing or add a periodic `3E 00` (TesterPresent) keep-alive.
+
+### 3. Long responses are multi-frame ISO-TP
+
+UDS DIDs frequently return payloads of 30–120+ bytes (think a full BMS state block: SOC + cell voltages × 64 cells + cell temps + currents + flags). These don't fit in one 8-byte CAN frame, so they're transmitted as a sequence of ELM327 lines:
+
+```
+03E                  ← length header: 0x3E = 62 bytes total payload
+0:6201018FF7FF       ← first frame: positive prefix + first 3 data bytes
+1:EF6A0000000000     ← continuation frame 1
+2:002009371C1B1B    ← continuation frame 2
+...
+8:EA0000000003E8    ← last frame, padded with AA if short
+```
+
+The web Sampler / sweep tool and the iOS Sampler both reassemble these into a single payload, strip the `62 0X XX` response prefix, and trim trailing `AA` padding. If you're parsing raw responses yourself, you need to do the same.
+
+### 4. Recommended workflow for Mode 22 vehicles
+
+1. **Probe `F180 – F1FF` first.** If positive responses appear on engine (7E0) and any other candidate ECUs, Mode 22 is supported and you know which addresses to focus on. If everything returns NRC 31 here too, the ECU may be locked behind a manufacturer-specific authenticated session (uncommon but documented for some EVs).
+2. **Walk other DID ranges until you find live data.** Score each range by how many DIDs return non-empty payloads (not just NRC 31).
+3. **Sweep the same range twice** at different vehicle states (engine off vs running, or before/after a hard accel). DIDs whose response *bytes change between sweeps* are live signals; DIDs whose bytes are identical are static configuration.
+4. **Capture a varied-state raw-mode session** with the live DIDs declared in the profile (single-byte placeholder formula `A` is fine for raw capture). Drive 5–10 minutes covering idle / cruise / accel / regen / EV-only (for hybrids).
+5. **Run `scripts/identify-mg-bytes.py`** against the CSV — it splits each multi-byte response column into per-byte and adjacent-byte-pair candidates and correlates each against throttle / engine load / RPM / speed. Strong correlations identify which bytes carry which signal.
+6. **Author proper PID entries** for the identified bytes, replacing the raw placeholders. Document everything in the profile's `validated_against` entry.
