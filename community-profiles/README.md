@@ -21,6 +21,7 @@ You can also manually drop a `.json` file into **Files app → On My iPhone → 
 | `toyota-camry-hybrid-2018plus` | Toyota Camry Hybrid (2018+) | @NathanNam | unvalidated — inherited from `lexus-rx450hl-2020` (same TNGA-K + THS-II platform, FWD-only) | [json](./toyota-camry-hybrid-2018plus.json) |
 | `toyota-camry-2018plus` | Toyota Camry gas (2018-2024) | @NathanNam | scaffold only — relies on standard Mode 01 auto-discovery | [json](./toyota-camry-2018plus.json) |
 | `nissan-rogue-2021plus` | Nissan Rogue gas (2021+) | @NathanNam | scaffold only — relies on standard Mode 01 auto-discovery | [json](./nissan-rogue-2021plus.json) |
+| `kia-niro-hybrid-2023plus` | Kia Niro Hybrid (2023+) | @NathanNam | 2026-06-14: 39 standard Mode 01 PIDs confirmed against a 2026 Niro LX Hybrid. Mode 22 (BMS / HCU) sweep needed for hybrid telemetry. | [json](./kia-niro-hybrid-2023plus.json) |
 
 ## Profile authoring is hard
 
