@@ -110,11 +110,12 @@ Open in Excel, pandas (`pd.read_csv(...)`), DuckDB, or any other tool — no pre
 
 ## Profiles
 
-Profiles are JSON documents that describe a vehicle family's PID landscape. Three ship with the app:
+Profiles are JSON documents that describe a vehicle family's PID landscape. Four ship with the app:
 
 - **`generic-obd2`** — universal fallback, auto-discovered standard PIDs only.
 - **`generic-toyota-hybrid`** — best-effort coverage for Toyota Hybrid Synergy Drive vehicles. Adds HV SOC, voltage, current, temperature, and MG RPM.
 - **`lexus-rx450hl-2020`** — partial profile (v0.6.0-partial). Validated against a real 2020 RX450hL via empirical PID sweeps and held-state raw-hex capture diffs. Currently exposes MG1 / MG2 / MGR torques (PIDs 61/62/63), HV pack voltage (PID 98), and four cell-block temperatures (PID 95). Remaining unidentified live PIDs are catalogued in `validated_against` for future identification work — see `scripts/identify-mg-bytes.py` for the tooling used to build it out.
+- **`kia-niro-hybrid-2023plus`** — partial profile (v0.2.0-partial). First Hyundai-Kia profile in the repo. Validated against a 2026 Niro LX Hybrid rental on 2026-06-14. Hyundai-Kia uses Mode 22 (UDS) exclusively, gated behind the extended diagnostic session (`10 03`) — both the sampler and the sweep tool now handle this automatically. Exposes 9 decoded BMS signals from DID 0x0101 (SOC, four cell-block temps, max/min cell voltage, HV charge current) plus DID 0x0107 inverter coolant temp. Retains 15 unidentified BMS DIDs as raw-byte entries for future decoding work.
 
 You can import any third-party profile JSON via **Settings → Profiles**, and export any installed profile back to JSON to share. Authoring new profiles is a manual JSON-edit task (no in-app editor in v1) — the schema is documented in `src/profiles/types.ts`.
 
