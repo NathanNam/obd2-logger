@@ -11,6 +11,8 @@
   },
   "ecus": {
     "engine": { "request_header": "7E0", "response_header": "7E8" },
+    "mcu":    { "request_header": "7E2", "response_header": "7EA" },
+    "vcu":    { "request_header": "7E3", "response_header": "7EB" },
     "bms":    { "request_header": "7E4", "response_header": "7EC" },
     "hcu":    { "request_header": "7E5", "response_header": "7ED" }
   },
