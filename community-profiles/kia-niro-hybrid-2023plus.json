@@ -1,8 +1,8 @@
 {
   "profile_id": "kia-niro-hybrid-2023plus",
-  "profile_version": "0.1.0-scaffold",
-  "display_name": "Kia Niro Hybrid (2023+) — SCAFFOLD",
-  "description": "Scaffold for the 2nd-generation Kia Niro Hybrid (SG2, 2023+). 1.6L Smartstream Kappa II GDI engine paired with a 32 kW permanent-magnet synchronous motor sandwiched in a 6-speed DCT, fed by a 1.32 kWh Li-ion polymer HV pack. Architecture is a parallel hybrid (motor in the transmission), distinct from Toyota's HSD planetary split and from Hyundai-Kia's series-parallel HEVs of the prior generation. Mode 21 is uncommon on modern Hyundai-Kia; the interesting telemetry (SOC, HV pack V/I, motor torque, cell temps, regen power) lives on Mode 22 (UDS ReadDataByIdentifier) addressed to the BMS at 7E4/7EC and the HCU at 7E5/7ED. NO Mode 22 PIDs are authored yet — a sweep against this vehicle is required first. The single `rpm` entry below is a placeholder to satisfy the iOS importer's non-empty-pids requirement (the Sampler dedupes by (mode, pid), so it's a no-op against standard auto-discovery). The scaffold's value-add over `generic-obd2` is the vehicle_match metadata (picker recognizes the Niro) and the BMS + HCU ECU declarations (so a future sweep targets all three controllers without re-editing).",
+  "profile_version": "0.2.0-partial",
+  "display_name": "Kia Niro Hybrid (2023+) — PARTIAL",
+  "description": "2nd-generation Kia Niro Hybrid (SG2, 2023+). 1.6L Smartstream Kappa II GDI engine paired with a 32 kW PMSM motor sandwiched in a 6-speed DCT, fed by a Li-Po HV pack. Parallel hybrid architecture (motor in transmission), unlike Toyota HSD planetary split. Mode 21 is dead everywhere; all live data comes via Mode 22 (UDS) addressed to the BMS at 7E4 — and only after entering the extended diagnostic session (UDS 10 03), which the web Sampler and the sweep tool both handle automatically. 9 BMS signals decoded from a varied-state raw capture against a 2026 Niro LX Hybrid rental: SOC, four cell-block temperatures, max/min cell voltages, HV charge current, and inverter coolant temp. The remaining DIDs (0102-0108, 0110-0134, 01F2) are retained as raw-byte entries so they continue to flow into CSVs for future identification work — see scripts/identify-mg-bytes.py and validated_against below for the methodology.",
   "vehicle_match": {
     "make": "Kia",
     "models": ["Niro", "Niro Hybrid"],
@@ -17,13 +17,119 @@
     "hcu":    { "request_header": "7E5", "response_header": "7ED" }
   },
   "pids": [
-    { "id": "bms_did_0101", "display_name": "BMS DID 0101 (raw)", "ecu": "bms", "mode": "22", "pid": "0101", "unit": "", "formula": "A", "category": "battery" },
-    { "id": "bms_did_0102", "display_name": "BMS DID 0102 (raw)", "ecu": "bms", "mode": "22", "pid": "0102", "unit": "", "formula": "A", "category": "battery" },
-    { "id": "bms_did_0103", "display_name": "BMS DID 0103 (raw)", "ecu": "bms", "mode": "22", "pid": "0103", "unit": "", "formula": "A", "category": "battery" },
+    {
+      "id": "soc_display",
+      "display_name": "HV SOC (display)",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "%",
+      "formula": "E/2",
+      "category": "battery",
+      "min": 0,
+      "max": 100
+    },
+    {
+      "id": "cell_temp_1",
+      "display_name": "Cell-block temp 1",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "°C",
+      "formula": "O",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "cell_temp_2",
+      "display_name": "Cell-block temp 2",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "°C",
+      "formula": "P",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "cell_temp_3",
+      "display_name": "Cell-block temp 3",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "°C",
+      "formula": "Q",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "cell_temp_4",
+      "display_name": "Cell-block temp 4",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "°C",
+      "formula": "R",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    {
+      "id": "cell_v_max",
+      "display_name": "Max cell voltage",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "V",
+      "formula": "X*0.02",
+      "category": "battery",
+      "min": 2.5,
+      "max": 4.5
+    },
+    {
+      "id": "cell_v_min",
+      "display_name": "Min cell voltage",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "V",
+      "formula": "Z*0.02",
+      "category": "battery",
+      "min": 2.5,
+      "max": 4.5
+    },
+    {
+      "id": "hv_charge_current",
+      "display_name": "HV charge current",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0101",
+      "unit": "A",
+      "formula": "(byte(55)*256+byte(56))/100",
+      "category": "battery",
+      "min": 0,
+      "max": 120
+    },
+    {
+      "id": "inverter_coolant_temp",
+      "display_name": "Inverter coolant temp",
+      "ecu": "bms",
+      "mode": "22",
+      "pid": "0107",
+      "unit": "°C",
+      "formula": "T",
+      "category": "battery",
+      "min": -20,
+      "max": 80
+    },
+    { "id": "bms_did_0102", "display_name": "BMS DID 0102 (raw cell V x32)", "ecu": "bms", "mode": "22", "pid": "0102", "unit": "", "formula": "A", "category": "battery" },
+    { "id": "bms_did_0103", "display_name": "BMS DID 0103 (raw cell V x32)", "ecu": "bms", "mode": "22", "pid": "0103", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0104", "display_name": "BMS DID 0104 (raw)", "ecu": "bms", "mode": "22", "pid": "0104", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0105", "display_name": "BMS DID 0105 (raw)", "ecu": "bms", "mode": "22", "pid": "0105", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0106", "display_name": "BMS DID 0106 (raw)", "ecu": "bms", "mode": "22", "pid": "0106", "unit": "", "formula": "A", "category": "battery" },
-    { "id": "bms_did_0107", "display_name": "BMS DID 0107 (raw)", "ecu": "bms", "mode": "22", "pid": "0107", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0108", "display_name": "BMS DID 0108 (raw)", "ecu": "bms", "mode": "22", "pid": "0108", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0110", "display_name": "BMS DID 0110 (raw)", "ecu": "bms", "mode": "22", "pid": "0110", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0111", "display_name": "BMS DID 0111 (raw)", "ecu": "bms", "mode": "22", "pid": "0111", "unit": "", "formula": "A", "category": "battery" },
@@ -37,15 +143,14 @@
     { "id": "bms_did_01F2", "display_name": "BMS DID 01F2 (raw)", "ecu": "bms", "mode": "22", "pid": "01F2", "unit": "", "formula": "A", "category": "battery" }
   ],
   "sources": [
-    "Empirical capture against a 2026 Kia Niro LX Hybrid (Nathan's rental): 3 raw-mode sessions on 2026-06-14 using the generic-obd2 fallback — confirmed the 39-PID standard Mode 01 surface listed in validated_against below.",
-    "BMS / HCU ECU addressing (7E4, 7E5) cross-checked from community Hyundai-Kia hybrid sources: EV Notify project, Torque Pro Kia/Hyundai DID database, and HybridKia / Niro forums. Addressing is consistent across the Hyundai-Kia hybrid lineup (Niro HEV, Kona HEV, Ioniq HEV, Sorento HEV) — model-specific DIDs differ, but ECU IDs are stable.",
-    "Standard SAE J1979 Mode 01 PIDs — auto-discovered, not enumerated as profile PIDs"
+    "Empirical sweeps + raw captures against a 2026 Kia Niro LX Hybrid rental on 2026-06-14. Sweep that surfaced the 19 BMS DIDs with multi-frame assembled: sweep__2026-06-14T13-42-49Z.json. Decode source: raw__2026-06-14T14-15-57Z__bxh8q530.csv (76 ticks, RPM range 0-9269, varied throttle / engine load, coolant climbing 122-132°F).",
+    "BMS ECU address (7E4) and Mode 22 0x01xx DID space cross-checked against community Hyundai-Kia hybrid sources: EV Notify project, Torque Pro Kia/Hyundai DID database, HybridKia and Niro forums. Addressing is stable across the Hyundai-Kia hybrid lineup; the byte layout within DID 0x0101 is HEV-specific and was identified empirically here."
   ],
   "validated_against": [
     {
       "vehicle": "2026 Kia Niro LX Hybrid (Nathan's rental)",
       "date": "2026-06-14",
-      "notes": "STANDARD PID SURFACE CONFIRMED (39 PIDs responding via generic-obd2 auto-discovery across 3 raw-mode sessions totalling ~17 minutes, ~326 rows): abs_evap_pressure, abs_load, abs_throttle_b, accel_pedal_d, accel_pedal_e, afr_command, ambient_temp, barometric, cat_temp_b1s1, control_module_v, coolant_temp, distance_since_clear, distance_with_mil, egr_command, egr_error, engine_load, evap_purge_cmd, fuel_level, fuel_rail_pressure, fuel_rate, fuel_system_status, fuel_type, intake_map, ltft_b1, ltft_b1b3_o2, maf, monitor_status, o2_b1s2, obd_standard, rel_throttle, rpm, run_time, speed, stft_b1, stft_b1b3_o2, throttle_actuator_cmd, throttle_pos, timing_advance, warmups_since_clear. HYBRID BEHAVIOR OBSERVED (without dedicated hybrid PIDs): clear ICE-cycling pattern in the longest session (raw__2026-06-14T00-20-15Z__0kspengc.csv, 257 rows) — rpm drops to 0 with fuel_rate=0 and engine_load=0 while speed remains 50-90 km/h (pure EV propulsion segments), interleaved with rpm=1700-2600 and fuel_rate=5-7 g/s (ICE-on segments for power assist or HV pack charging). Coolant temp climbs 70→97 °C across the session, confirming engine warm-up dynamics. The cycling pattern is signal enough to infer hybrid state but NOT enough to quantify SOC, motor power, or regen — those require Mode 22 sweeps on BMS (7E4) and HCU (7E5). UNRESOLVED / NEEDED NEXT: run the PID Sweep tool with Mode=22 against ECUs bms and hcu while the rental is still in hand. Promising Hyundai-Kia community-documented DIDs to look for in the sweep output: BMS DID 0x0101 (multi-byte response — should contain SOC, HV voltage, HV current, max/min cell V), BMS DID 0x0105 (cell temps + auxiliary). HCU DIDs vary by model and are less well documented — sweep the full 0x0100-0x01FF range. Then capture a varied-state raw session (idle / cruise / accel / regen / EV-only) and identify byte positions via scripts/identify-mg-bytes.py. Source files: raw__2026-06-14T00-19-46Z__xhrmsm0m.csv (11 PIDs, 20 rows), raw__2026-06-14T00-20-15Z__0kspengc.csv (39 PIDs, 257 rows — driving), raw__2026-06-14T00-44-32Z__d36vhm3b.csv (18 PIDs, 49 rows)."
+      "notes": "Workflow: (1) Confirmed Mode 21 dead everywhere on this car (NRC 11 across all 256 PIDs at engine/MCU/VCU/BMS/HCU). (2) Mode 22 also returned NRC 31 across 0x0000-0x00FF, 0x0100-0x01FF, 0x0200-0x02FF, 0x0500-0x05FF, 0x4000-0x40FF, 0xB000-0xB0FF in default diagnostic session — strong signature of session gating. (3) F1xx identification DIDs returned 48 OK responses including F190 (VIN start) and F197 = 'BMS' on 7E4, confirming Mode 22 is supported and the BMS lives at 7E4 as the EV community suggests. (4) Adding UDS 10 03 (extendedDiagnosticSession) entry before Mode 22 sweep unlocked 19 BMS DIDs in 0x0101-0x01F2 range. (5) After fixing multi-frame ISO-TP reassembly in the sweep + sampler, full payloads (45-122 bytes per DID) flowed through to raw-mode CSVs. (6) Byte-slice correlation against rpm / engine_load / throttle / speed / coolant_temp across 76 ticks identified the 9 named signals shipping in this profile.\n\nIDENTIFICATIONS:\n  - soc_display (0101 byte 4): range 84-103 raw = 42.0-51.5% SOC. Weak state correlations (expected — SOC drifts slowly). E/2 matches Hyundai-Kia EV BMS convention.\n  - cell_temp_1..4 (0101 bytes 14-17, formulas O,P,Q,R): range 30-33°C raw. Pearson +0.68 to +0.78 vs coolant_temp — consistent with cells sharing the engine cooling loop on this generation. Same 4-byte pattern as the Lexus RX 450h PID 95.\n  - cell_v_max (0101 byte 23 = X): range 172-190 raw → 3.44-3.80V at 0.02V/LSB. Matches per-cell voltages observed in DID 0102/0103.\n  - cell_v_min (0101 byte 25 = Z): range 171-190 raw → 3.42-3.80V. Same scale as max.\n  - hv_charge_current (0101 bytes 55-56): range 0-5754 raw → 0-57.5A unsigned. Pearson +0.873 vs rpm, +0.830 vs maf, +0.810 vs engine_load — by far the strongest correlation of any byte in any DID. Goes up when ICE works harder, consistent with engine-driven generator charging the HV pack. NOTE: this is the CHARGE side; the discharge / regen side may live at adjacent bytes or in a separate DID — not yet identified.\n  - inverter_coolant_temp (0107 byte 19 = T): range 19-20°C raw. Pearson +0.88 vs coolant_temp — almost certainly an inverter / power-electronics coolant inlet temp.\n\nUNRESOLVED / RETAINED AS RAW:\n  - 0102 + 0103 carry 32 + 32 = 64 cell voltages (each byte = one cell, *0.02V). Decoding into 64 individual cell PIDs would explode the column count; deferred. The raw payloads are in the CSV.\n  - 0107 has strong-correlation bytes at offsets 4, 6, 8, 10-13, 23, 42 that look like temperatures, motor signals, or counters. Need more varied-state captures (especially regen + EV-only) to disambiguate.\n  - 0108 has 26 distinct payloads — multiple state-dependent bytes. Charging power, energy throughput, or fault flags suspected.\n  - 0114 (22 bytes, 4 distinct payloads) and 0130-0134 (44-75 bytes each, mostly static during this drive) likely contain energy / odometer-style counters that didn't move much in ~2 minutes of driving.\n  - 01F2 (122 bytes, 6 distinct payloads) is the biggest single DID — likely a full system state block worth dedicated identification effort.\n\nWHAT'S MISSING:\n  - HV pack voltage: standard Mode 01 PID 5C (hv_system_voltage) is supported on this Niro and is auto-discovered, so a custom PID isn't needed.\n  - HV pack discharge current / regen current: not yet found. May be in 0101 bytes 24-26 (range 1-40, 171-190, 1-56 — weak state correlations) or in another DID. Worth a follow-up with explicit regen-braking captures.\n  - Motor torque, motor RPM, gear engaged: 7E2 and 7E3 are alive ECUs that returned NRC 31 across 0x0100-0x01FF in extended session — they have Mode 22 DIDs somewhere but we haven't found the range. Kia likely keeps motor data behind their K-DS dealer tooling with authenticated sessions; this may not be reachable with standard tools.\n\nTOOL CHANGES SHIPPED ALONGSIDE THIS PROFILE:\n  - src/obd/sweep.ts + samplers: send UDS 10 03 before Mode 22 queries when any Mode 22 PID is grouped at an ECU.\n  - src/obd/sweep.ts + src/obd/pid-codec.ts + iOS Sampler.swift: assemble multi-frame ISO-TP responses into one payload, strip the response prefix, trim AA padding.\n  - src/obd/formula.ts + iOS FormulaEvaluator.swift: extended byte variables from A-H/A-J to A-Z and added byte(n) for indices ≥26, so formulas can reach the deeper offsets in long Mode 22 payloads."
     }
   ]
 }

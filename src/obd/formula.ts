@@ -1,7 +1,8 @@
 // Sandboxed formula evaluator for OBD2 PID byte-position formulas.
 //
 // Supported tokens:
-//   - A, B, C, D, E, F, G, H — response bytes (0-indexed mapping: A=byte 0, etc.)
+//   - A, B, C, … Z — response bytes (0-indexed mapping: A=byte 0, B=byte 1, … Z=byte 25)
+//   - byte(n) — response byte at index n (for bytes beyond Z, e.g. byte(55))
 //   - integers and decimals: 256, 1.5, 0.5
 //   - hex literals: 0xff, 0x100
 //   - operators: + - * / % parentheses
@@ -17,7 +18,7 @@ const FUNCTIONS: Record<string, (...args: number[]) => number> = {
   signed: (n: number) => (n > 0x7f ? n - 0x100 : n),
 };
 
-const BYTE_VARS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const BYTE_VARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 type Tok =
   | { kind: "num"; value: number }
@@ -83,7 +84,7 @@ function tokenize(input: string): Tok[] {
       const name = input.slice(start, i);
       if (BYTE_VARS.includes(name)) {
         tokens.push({ kind: "var", name });
-      } else if (FUNCTIONS[name]) {
+      } else if (FUNCTIONS[name] || name === "byte") {
         tokens.push({ kind: "fn", name });
       } else {
         throw new Error(`Unknown identifier '${name}' in formula '${input}'.`);
@@ -187,6 +188,16 @@ class Parser {
       }
       const close = this.next();
       if (close.kind !== "rparen") throw new Error("Expected ')' in function call.");
+      if (t.name === "byte") {
+        if (args.length !== 1) throw new Error("byte() takes exactly one argument.");
+        const idx = args[0] | 0;
+        if (idx < 0 || idx >= this.bytes.length) {
+          throw new Error(
+            `Formula references byte(${idx}) but only ${this.bytes.length} bytes were returned.`,
+          );
+        }
+        return this.bytes[idx];
+      }
       return FUNCTIONS[t.name](...args);
     }
     throw new Error("Unexpected token in formula.");
