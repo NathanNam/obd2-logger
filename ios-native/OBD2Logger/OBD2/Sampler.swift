@@ -273,8 +273,43 @@ final class Sampler {
             .components(separatedBy: .whitespacesAndNewlines)
             .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: " ", with: "") }
             .filter { !$0.isEmpty }
+
+        // Multi-frame ISO-TP: ELM327 emits "<digit>:<hex>" lines for long
+        // payloads. The first frame contains the positive-response prefix;
+        // continuation frames are pure data. Concatenate in index order and
+        // slice once after the prefix. Without this, Mode 22 DIDs longer
+        // than ~5 bytes lost everything past the first frame — Hyundai-Kia
+        // BMS DID 0101 (59 bytes) collapsed to 3.
+        var frames: [(idx: Int, hex: String)] = []
         for line in lines {
-            // Strip a leading "<digit>:" frame-index prefix if present.
+            guard let colonIdx = line.firstIndex(of: ":"),
+                  line.distance(from: line.startIndex, to: colonIdx) == 1,
+                  let frameIdx = Int(String(line[..<colonIdx]), radix: 16) else { continue }
+            let hex = String(line[line.index(after: colonIdx)...])
+            if hex.allSatisfy({ $0.isHexDigit }) {
+                frames.append((frameIdx, hex))
+            }
+        }
+        if !frames.isEmpty {
+            frames.sort { $0.idx < $1.idx }
+            let joined = frames.map { $0.hex }.joined()
+            if let range = joined.range(of: prefix) {
+                var after = String(joined[range.upperBound...])
+                // Strip trailing CAN frame AA-padding.
+                while after.hasSuffix("AA") && after.count >= 4 {
+                    let nextEnd = after.index(after.endIndex, offsetBy: -2)
+                    if after[after.index(nextEnd, offsetBy: -2)..<nextEnd] == "AA" {
+                        after = String(after[..<nextEnd])
+                    } else {
+                        break
+                    }
+                }
+                return HexParsing.bytes(after)
+            }
+        }
+
+        // Single-frame fallback: short responses don't use the "<idx>:" form.
+        for line in lines {
             let cleaned: String
             if let colonIdx = line.firstIndex(of: ":"),
                line.distance(from: line.startIndex, to: colonIdx) <= 2,
