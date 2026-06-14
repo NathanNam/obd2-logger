@@ -198,8 +198,7 @@ export async function runSweep(elm: Elm327, opts: SweepOpts = {}): Promise<Sweep
         } else {
           const matchLine = data.find((l) => l.includes(positivePrefix));
           if (matchLine) {
-            const idx = matchLine.indexOf(positivePrefix);
-            const payload = matchLine.slice(idx + positivePrefix.length);
+            const payload = assembleMultiFramePayload(data, positivePrefix);
             const bytes = hexToBytes(payload);
             responses.push({
               ecu: ecu.name,
@@ -270,6 +269,41 @@ export async function runSweep(elm: Elm327, opts: SweepOpts = {}): Promise<Sweep
 function positiveResponsePrefix(mode: string, pid: string): string {
   const modeNum = parseInt(mode, 16);
   return ((modeNum + 0x40).toString(16).padStart(2, "0") + pid).toUpperCase();
+}
+
+/**
+ * Reassemble an ELM327 multi-frame ISO-TP response into a single hex payload.
+ * Single-frame responses arrive as one line containing the positive prefix.
+ * Multi-frame responses arrive as a length header line ("03E") followed by
+ * frames of the form "<n>:<hex>" where n is the 0-indexed frame number; the
+ * first frame contains the positive prefix and the others are pure data.
+ * Strips the prefix and any trailing AA padding bytes.
+ */
+function assembleMultiFramePayload(lines: string[], positivePrefix: string): string {
+  const frames: { idx: number; hex: string }[] = [];
+  let firstLine = "";
+  for (const line of lines) {
+    const m = line.match(/^([0-9A-F]):([0-9A-F]+)$/);
+    if (m) {
+      frames.push({ idx: parseInt(m[1], 16), hex: m[2] });
+    } else if (line.includes(positivePrefix) && !firstLine) {
+      firstLine = line;
+    }
+  }
+  if (frames.length === 0) {
+    // Single-frame: just slice off the prefix from the matched line.
+    const idx = firstLine.indexOf(positivePrefix);
+    return idx >= 0 ? firstLine.slice(idx + positivePrefix.length) : "";
+  }
+  frames.sort((a, b) => a.idx - b.idx);
+  const concatenated = frames.map((f) => f.hex).join("");
+  const prefixIdx = concatenated.indexOf(positivePrefix);
+  if (prefixIdx < 0) return concatenated;
+  let payload = concatenated.slice(prefixIdx + positivePrefix.length);
+  // Strip trailing AA padding (CAN frame padding when the data doesn't fill
+  // the last 8-byte frame). Conservative: only strip a run of >=2 trailing AAs.
+  payload = payload.replace(/(AA){2,}$/i, "");
+  return payload;
 }
 
 export type SweepRunResult = {
