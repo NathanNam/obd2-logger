@@ -128,9 +128,22 @@ export async function runSweep(elm: Elm327, opts: SweepOpts = {}): Promise<Sweep
   let count = 0;
   let responsive = 0;
 
+  const wantsMode22 = modeRanges.some((r) => r.mode === "22");
+
   for (const ecu of ecus) {
     if (opts.abortSignal?.aborted) break;
     await elm.send(`ATSH${ecu.request_header}`, { timeoutMs: 800 }).catch(() => null);
+
+    // Hyundai-Kia and other modern manufacturers gate most Mode 22 live-data
+    // DIDs behind the extended diagnostic session (UDS service 10 03).
+    // F1xx identification DIDs are accessible in the default session but the
+    // live SOC / HV / motor / cell-temp data is not. Enter extended session
+    // before sweeping Mode 22; ignore the response (some ECUs accept silently,
+    // some return NRC — in either case we just continue and let the sweep
+    // surface whatever DIDs are now reachable).
+    if (wantsMode22) {
+      await elm.send("1003", { timeoutMs: 1200 }).catch(() => null);
+    }
 
     for (const range of modeRanges) {
       const mode = range.mode.toUpperCase();
