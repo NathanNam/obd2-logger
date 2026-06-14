@@ -77,6 +77,11 @@ export function decodePidResponse(def: PidDef, lines: string[]): DecodeOutcome {
     }
     try {
       const value = evaluateFormula(def.formula, bytes);
+      // NaN / Infinity → treat as no-data so sensor-sentinel formulas like
+      // `nullIfGte(T, 254)` produce blank cells instead of literal "NaN".
+      if (!Number.isFinite(value)) {
+        return { ok: false, reason: "non-finite", rawBytes: bytes };
+      }
       return { ok: true, value, rawBytes: bytes };
     } catch (e) {
       return {

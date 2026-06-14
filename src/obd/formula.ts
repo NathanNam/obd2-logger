@@ -6,7 +6,14 @@
 //   - integers and decimals: 256, 1.5, 0.5
 //   - hex literals: 0xff, 0x100
 //   - operators: + - * / % parentheses
-//   - functions (whitelisted): min, max, abs, signed (signed turns A into a signed int8 etc.)
+//   - functions (whitelisted):
+//       min, max, abs                — standard
+//       signed(n)                     — interpret 8-bit byte as signed int8
+//       signed16(n)                   — interpret 16-bit word as signed int16
+//       nullIfGte(value, threshold)   — return NaN when value >= threshold (sensor sentinel)
+//
+// Formulas returning NaN are treated as "no data" by pid-codec, mapping to
+// blank cells in the CSV — use this for sensor-asleep / unavailable sentinels.
 //
 // No identifiers other than the byte names and whitelisted functions are allowed.
 // No statements, no member access, no string literals.
@@ -16,6 +23,8 @@ const FUNCTIONS: Record<string, (...args: number[]) => number> = {
   max: Math.max,
   abs: Math.abs,
   signed: (n: number) => (n > 0x7f ? n - 0x100 : n),
+  signed16: (n: number) => (n > 0x7fff ? n - 0x10000 : n),
+  nullIfGte: (v: number, t: number) => (v >= t ? NaN : v),
 };
 
 const BYTE_VARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
