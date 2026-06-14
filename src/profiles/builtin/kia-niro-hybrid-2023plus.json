@@ -177,7 +177,7 @@
     { "id": "stft_b1b3_o2",         "display_name": "STFT 2nd O2 B1+B3",      "ecu": "engine", "mode": "22", "pid": "F455", "unit": "%",    "formula": "A*100/128-100",       "category": "emissions" },
     { "id": "ltft_b1b3_o2",         "display_name": "LTFT 2nd O2 B1+B3",      "ecu": "engine", "mode": "22", "pid": "F456", "unit": "%",    "formula": "A*100/128-100",       "category": "emissions" },
     { "id": "fuel_rate",            "display_name": "Fuel rate",              "ecu": "engine", "mode": "22", "pid": "F45E", "unit": "L/h",  "formula": "(A*256+B)/20",         "category": "engine" },
-    { "id": "odometer",             "display_name": "Odometer",               "ecu": "engine", "mode": "22", "pid": "F4A6", "unit": "km",   "formula": "(A*16777216+B*65536+C*256+D)/20", "category": "engine" }
+    { "id": "odometer",             "display_name": "Odometer",               "ecu": "engine", "mode": "22", "pid": "F4A6", "unit": "km",   "formula": "(A*16777216+B*65536+C*256+D)/10", "category": "engine" }
   ],
   "sources": [
     "Empirical sweeps + raw captures against a 2026 Kia Niro LX Hybrid rental on 2026-06-14. Sweep that surfaced the 19 BMS DIDs with multi-frame assembled: sweep__2026-06-14T13-42-49Z.json. BMS decode source: raw__2026-06-14T14-15-57Z__bxh8q530.csv (76 ticks, RPM range 0-9269, varied throttle / engine load, coolant climbing 122-132°F).",
