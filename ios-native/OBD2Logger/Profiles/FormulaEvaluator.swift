@@ -67,9 +67,22 @@ final class FormulaEvaluator {
         if let cached = cache[formula] { return cached }
         // Wrap the formula in a function so we can call it with byte values.
         // A-Z map to bytes 0-25; `byte(n)` is supplied as a callback for
-        // higher-index access. The order here MUST match the args order in
-        // evaluate().
-        let source = "(function(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,byte){ return (\(formula)); })"
+        // higher-index access. Helper functions match the web evaluator:
+        //   signed(n)       — 8-bit two's complement
+        //   signed16(n)     — 16-bit two's complement
+        //   nullIfGte(v, t) — NaN when v >= t (sensor-sentinel)
+        // NaN propagates through JS arithmetic and surfaces here as nil
+        // (the `d.isFinite` check in evaluate()).
+        // The order here MUST match the args order in evaluate().
+        let source = """
+        (function(A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,byte){
+            var min = Math.min, max = Math.max, abs = Math.abs;
+            var signed   = function(n){ return n > 0x7F   ? n - 0x100   : n; };
+            var signed16 = function(n){ return n > 0x7FFF ? n - 0x10000 : n; };
+            var nullIfGte = function(v, t){ return v >= t ? NaN : v; };
+            return (\(formula));
+        })
+        """
         guard let value = context.evaluateScript(source), value.isObject else {
             return nil
         }

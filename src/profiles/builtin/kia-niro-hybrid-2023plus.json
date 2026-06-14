@@ -1,6 +1,6 @@
 {
   "profile_id": "kia-niro-hybrid-2023plus",
-  "profile_version": "0.3.0-partial",
+  "profile_version": "0.4.0-partial",
   "display_name": "Kia Niro Hybrid (2023+) — PARTIAL",
   "description": "2nd-generation Kia Niro Hybrid (SG2, 2023+). 1.6L Smartstream Kappa II GDI engine paired with a 32 kW PMSM motor sandwiched in a 6-speed DCT, fed by a Li-Po HV pack. Parallel hybrid architecture (motor in transmission), unlike Toyota HSD planetary split. Mode 21 is dead everywhere; all live data comes via Mode 22 (UDS) — and only after entering the extended diagnostic session (UDS 10 03), which the web Sampler and the sweep tool both handle automatically. Two distinct data namespaces: (1) BMS at 7E4 owns the 0x01xx DID space with HV-pack telemetry (SOC, cell temps, cell voltages, charge current); (2) Engine ECU at 7E0 owns the 0xF4xx DID space, where Kia transplanted every standard SAE J1979 Mode 01 PID — F4<pid> on engine ECU returns the same payload the standard 01<pid> would on a normal car. The 4 emissions-mandated PIDs (01, 21, 30, 31) are also kept on the standard Mode 01 path for regulatory reasons. This profile decodes 9 BMS signals and ~36 engine telemetry signals (rpm, speed, throttle, MAF, coolant, fuel, O2 sensors, catalyst temps, etc.) via that Mode 22 0xF4xx mirror.",
   "vehicle_match": {
@@ -102,16 +102,16 @@
       "max": 4.5
     },
     {
-      "id": "hv_charge_current",
-      "display_name": "HV charge current",
+      "id": "hv_pack_current",
+      "display_name": "HV pack current (+charge / -discharge)",
       "ecu": "bms",
       "mode": "22",
       "pid": "0101",
       "unit": "A",
-      "formula": "(byte(55)*256+byte(56))/100",
+      "formula": "signed16(byte(55)*256+byte(56))/100",
       "category": "battery",
-      "min": 0,
-      "max": 120
+      "min": -300,
+      "max": 300
     },
     {
       "id": "inverter_coolant_temp",
@@ -120,10 +120,10 @@
       "mode": "22",
       "pid": "0107",
       "unit": "°C",
-      "formula": "T",
+      "formula": "nullIfGte(T, 254)",
       "category": "battery",
       "min": -20,
-      "max": 80
+      "max": 200
     },
     { "id": "bms_did_0102", "display_name": "BMS DID 0102 (raw cell V x32)", "ecu": "bms", "mode": "22", "pid": "0102", "unit": "", "formula": "A", "category": "battery" },
     { "id": "bms_did_0103", "display_name": "BMS DID 0103 (raw cell V x32)", "ecu": "bms", "mode": "22", "pid": "0103", "unit": "", "formula": "A", "category": "battery" },
@@ -185,6 +185,11 @@
     "BMS ECU address (7E4) and Mode 22 0x01xx DID space cross-checked against community Hyundai-Kia hybrid sources: EV Notify project, Torque Pro Kia/Hyundai DID database, HybridKia and Niro forums. The F4xx engine mirror is empirically identified here; not yet found in community sources."
   ],
   "validated_against": [
+    {
+      "vehicle": "2026 Kia Niro LX Hybrid (Nathan's rental)",
+      "date": "2026-06-14 (sentinel + signed-current polish, v0.4.0)",
+      "notes": "Two refinements after a 98-minute / 70-mile real-world drive (2026-06-14T16:50:30Z__799tbz3t.csv) surfaced two artifacts:\n\n(1) inverter_coolant_temp reported a constant 250-255°C across a 10-minute follow-up session when the inverter was thermally quiesced. Byte 19 of DID 0107 was returning 0xFA-0xFF — the SAE J1979 sentinel for 'sensor unavailable / no data'. The earlier active-driving capture showed real values (82-164°C), so byte 19 is the correct byte for inverter temp. Now wrapped in nullIfGte(T, 254) — the formula evaluator returns NaN for sentinel readings and pid-codec maps NaN to a blank CSV cell instead of writing literal '255'.\n\n(2) hv_charge_current peaked at 654.4 A during the long drive — physically impossible (Niro Hybrid regen peaks around 50 kW = ~210 A at the pack's ~240V nominal). Hypothesis: bytes 55-56 of DID 0101 are a 16-bit signed two's-complement value (positive = charging into pack, negative = discharging from pack). 0xFFAB unsigned = 65,451 / 100 = 654.51 A; signed = -85 / 100 = -0.85 A regen flow. Normal positive charging values (0-150 A) are unaffected — for 16-bit values below 32768 the signed and unsigned interpretations are identical. Renamed to hv_pack_current with sign convention documented in display_name. CSV column name change is breaking for any pandas script keyed on 'hv_charge_current'.\n\nTool changes shipped alongside this profile:\n  - src/obd/formula.ts + iOS FormulaEvaluator.swift: added signed16(n) and nullIfGte(value, threshold) helpers. iOS wrapper also gains min/max/abs/signed aliases for parity (those were missing from iOS but present in web FUNCTIONS).\n  - src/obd/pid-codec.ts: NaN / Infinity from evaluateFormula now treated as 'no data' (blank cell), enabling nullIfGte to work end-to-end.\n\nKnown limitations of 0.4.0:\n  - The signed16 hypothesis for hv_pack_current is plausible but not directly verified against raw bytes from the 654 A spike ticks (the drive was in decoded mode). If a follow-up raw capture shows different byte patterns at regen, the formula may need revision. Bias is safe: normal positive readings unchanged; previously-impossible high readings now read as small negative regen flows.\n\nReferenced captures: raw__2026-06-14T14-15-57Z__bxh8q530.csv (76 ticks, BMS decode source), 2026-06-14T16-50-30Z__799tbz3t.csv (98 min, full F4xx + BMS coverage), 2026-06-14T20-22-27Z__dzqxhbj5.csv (10 min, surfaced the inverter sentinel)."
+    },
     {
       "vehicle": "2026 Kia Niro LX Hybrid (Nathan's rental)",
       "date": "2026-06-14 (engine telemetry F4xx, v0.3.0)",
